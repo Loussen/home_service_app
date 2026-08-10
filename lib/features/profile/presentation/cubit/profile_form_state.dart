@@ -1,0 +1,136 @@
+import 'package:equatable/equatable.dart';
+import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
+import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
+
+class ProfileFormState extends Equatable {
+  const ProfileFormState({
+    this.profileId,
+    this.categories = const [],
+    this.categoryId,
+    this.title = '',
+    this.bio = '',
+    this.city = 'Bakı',
+    this.district = '',
+    this.latitude = 40.4093,
+    this.longitude = 49.8671,
+    this.schedules = const {},
+    this.audioIntroUrl,
+    this.localAudioPath,
+    this.loading = false,
+    this.saving = false,
+    this.message,
+    this.savedProfile,
+  });
+
+  final int? profileId;
+  final List<CategoryModel> categories;
+  final int? categoryId;
+  final String title;
+  final String bio;
+  final String city;
+  final String district;
+  final double latitude;
+  final double longitude;
+
+  /// key: "day_slot" e.g. "1_morning"
+  final Map<String, bool> schedules;
+  final String? audioIntroUrl;
+  final String? localAudioPath;
+  final bool loading;
+  final bool saving;
+  final String? message;
+  final ProviderProfileModel? savedProfile;
+
+  static Map<String, bool> emptyMatrix({bool available = false}) {
+    final map = <String, bool>{};
+    for (var day = 1; day <= 7; day++) {
+      for (final slot in TimeSlots.all) {
+        map['${day}_$slot'] = available;
+      }
+    }
+    return map;
+  }
+
+  static Map<String, bool> fromSlots(List<ScheduleSlot> slots) {
+    final map = emptyMatrix();
+    for (final s in slots) {
+      map['${s.dayOfWeek}_${s.timeSlot}'] = s.isAvailable;
+    }
+    return map;
+  }
+
+  List<ScheduleSlot> toSlots() {
+    return schedules.entries
+        .where((e) => e.value)
+        .map((e) {
+          final parts = e.key.split('_');
+          return ScheduleSlot(
+            dayOfWeek: int.parse(parts[0]),
+            timeSlot: parts[1],
+            isAvailable: true,
+          );
+        })
+        .toList();
+  }
+
+  ProfileFormState copyWith({
+    int? profileId,
+    List<CategoryModel>? categories,
+    int? categoryId,
+    String? title,
+    String? bio,
+    String? city,
+    String? district,
+    double? latitude,
+    double? longitude,
+    Map<String, bool>? schedules,
+    String? audioIntroUrl,
+    String? localAudioPath,
+    bool? loading,
+    bool? saving,
+    String? message,
+    ProviderProfileModel? savedProfile,
+    bool clearMessage = false,
+    bool clearSaved = false,
+  }) {
+    return ProfileFormState(
+      profileId: profileId ?? this.profileId,
+      categories: categories ?? this.categories,
+      categoryId: categoryId ?? this.categoryId,
+      title: title ?? this.title,
+      bio: bio ?? this.bio,
+      city: city ?? this.city,
+      district: district ?? this.district,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      schedules: schedules ?? this.schedules,
+      audioIntroUrl: audioIntroUrl ?? this.audioIntroUrl,
+      localAudioPath: localAudioPath ?? this.localAudioPath,
+      loading: loading ?? this.loading,
+      saving: saving ?? this.saving,
+      message: clearMessage ? null : (message ?? this.message),
+      savedProfile: clearSaved ? null : (savedProfile ?? this.savedProfile),
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        profileId,
+        categories,
+        categoryId,
+        title,
+        bio,
+        city,
+        district,
+        latitude,
+        longitude,
+        schedules,
+        audioIntroUrl,
+        localAudioPath,
+        loading,
+        saving,
+        message,
+        savedProfile,
+      ];
+}
