@@ -20,6 +20,9 @@ class SearchRepositoryImpl implements SearchRepository {
     int? categoryId,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   }) async {
     try {
       return Right(await _remote.submitAudio(
@@ -31,6 +34,9 @@ class SearchRepositoryImpl implements SearchRepository {
         categoryId: categoryId,
         scheduledAt: scheduledAt,
         timeSlot: timeSlot,
+        childAge: childAge,
+        hasPet: hasPet,
+        budgetMax: budgetMax,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));
@@ -47,6 +53,9 @@ class SearchRepositoryImpl implements SearchRepository {
     bool isUrgent = false,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   }) async {
     try {
       return Right(await _remote.submitText(
@@ -58,6 +67,9 @@ class SearchRepositoryImpl implements SearchRepository {
         isUrgent: isUrgent,
         scheduledAt: scheduledAt,
         timeSlot: timeSlot,
+        childAge: childAge,
+        hasPet: hasPet,
+        budgetMax: budgetMax,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));

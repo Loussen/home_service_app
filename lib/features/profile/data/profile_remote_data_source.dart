@@ -52,6 +52,9 @@ class ProfileRemoteDataSource {
     int? cityId,
     int? districtId,
     List<ScheduleSlot> schedules = const [],
+    bool? fullThisWeek,
+    String? quietHoursStart,
+    String? quietHoursEnd,
   }) async {
     final res = await _client.dio.post('/provider-profiles', data: {
       'category_ids': categoryIds,
@@ -65,6 +68,9 @@ class ProfileRemoteDataSource {
       if (cityId != null) 'city_id': cityId,
       if (districtId != null) 'district_id': districtId,
       'schedules': schedules.map((s) => s.toJson()).toList(),
+      if (fullThisWeek != null) 'full_this_week': fullThisWeek,
+      if (quietHoursStart != null) 'quiet_hours_start': quietHoursStart,
+      if (quietHoursEnd != null) 'quiet_hours_end': quietHoursEnd,
     });
     return ProviderProfileModel.fromJson(
       res.data['data'] as Map<String, dynamic>,
@@ -84,6 +90,9 @@ class ProfileRemoteDataSource {
     int? districtId,
     bool? isActive,
     List<ScheduleSlot> schedules = const [],
+    bool? fullThisWeek,
+    String? quietHoursStart,
+    String? quietHoursEnd,
   }) async {
     final res = await _client.dio.put('/provider-profiles/$id', data: {
       'category_ids': categoryIds,
@@ -98,6 +107,9 @@ class ProfileRemoteDataSource {
       if (districtId != null) 'district_id': districtId,
       if (isActive != null) 'is_active': isActive,
       'schedules': schedules.map((s) => s.toJson()).toList(),
+      if (fullThisWeek != null) 'full_this_week': fullThisWeek,
+      'quiet_hours_start': quietHoursStart,
+      'quiet_hours_end': quietHoursEnd,
     });
     return ProviderProfileModel.fromJson(
       res.data['data'] as Map<String, dynamic>,

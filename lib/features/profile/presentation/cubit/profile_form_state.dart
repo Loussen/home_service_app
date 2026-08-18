@@ -21,6 +21,9 @@ class ProfileFormState extends Equatable {
     this.schedules = const {},
     this.audioIntroUrl,
     this.localAudioPath,
+    this.fullThisWeek = false,
+    this.quietHoursStart,
+    this.quietHoursEnd,
     this.loading = false,
     this.saving = false,
     this.message,
@@ -44,6 +47,9 @@ class ProfileFormState extends Equatable {
   final Map<String, bool> schedules;
   final String? audioIntroUrl;
   final String? localAudioPath;
+  final bool fullThisWeek;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
   final bool loading;
   final bool saving;
   final String? message;
@@ -97,6 +103,9 @@ class ProfileFormState extends Equatable {
     Map<String, bool>? schedules,
     String? audioIntroUrl,
     String? localAudioPath,
+    bool? fullThisWeek,
+    String? quietHoursStart,
+    String? quietHoursEnd,
     bool? loading,
     bool? saving,
     String? message,
@@ -104,6 +113,7 @@ class ProfileFormState extends Equatable {
     bool clearMessage = false,
     bool clearSaved = false,
     bool clearDistrict = false,
+    bool clearQuietHours = false,
   }) {
     return ProfileFormState(
       profileId: profileId ?? this.profileId,
@@ -121,6 +131,11 @@ class ProfileFormState extends Equatable {
       schedules: schedules ?? this.schedules,
       audioIntroUrl: audioIntroUrl ?? this.audioIntroUrl,
       localAudioPath: localAudioPath ?? this.localAudioPath,
+      fullThisWeek: fullThisWeek ?? this.fullThisWeek,
+      quietHoursStart:
+          clearQuietHours ? quietHoursStart : (quietHoursStart ?? this.quietHoursStart),
+      quietHoursEnd:
+          clearQuietHours ? quietHoursEnd : (quietHoursEnd ?? this.quietHoursEnd),
       loading: loading ?? this.loading,
       saving: saving ?? this.saving,
       message: clearMessage ? null : (message ?? this.message),
@@ -145,6 +160,9 @@ class ProfileFormState extends Equatable {
         schedules,
         audioIntroUrl,
         localAudioPath,
+        fullThisWeek,
+        quietHoursStart,
+        quietHoursEnd,
         loading,
         saving,
         message,

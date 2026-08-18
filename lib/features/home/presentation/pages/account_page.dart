@@ -7,6 +7,7 @@ import 'package:home_service_app/core/remote/app_locale_service.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/remote/change_app_locale.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
 
 class AccountPage extends StatelessWidget {
@@ -108,7 +109,10 @@ class AccountPage extends StatelessWidget {
                     _RoundIcon(icon: Icons.notifications_outlined, color: const Color(0xFFE8B923)),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                const ProfileCompletenessBanner(
+                  padding: EdgeInsets.only(top: 4, bottom: 12),
+                ),
                 SizedBox(
                   height: 128,
                   child: ListView(

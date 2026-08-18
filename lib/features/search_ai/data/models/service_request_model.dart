@@ -34,6 +34,7 @@ class MatchModel {
     this.scoreBreakdown,
     this.reasons = const [],
     this.provider,
+    this.mergedProfileCount = 1,
   });
 
   final int? id;
@@ -42,6 +43,7 @@ class MatchModel {
   final Map<String, dynamic>? scoreBreakdown;
   final List<MatchReason> reasons;
   final ProviderProfileModel? provider;
+  final int mergedProfileCount;
 
   factory MatchModel.fromJson(Map<String, dynamic> json) {
     final providerJson = json['provider'] as Map<String, dynamic>?;
@@ -62,6 +64,8 @@ class MatchModel {
       provider: providerJson != null
           ? ProviderProfileModel.fromJson(providerJson)
           : null,
+      mergedProfileCount:
+          (json['merged_profile_count'] as num?)?.toInt() ?? 1,
     );
   }
 }

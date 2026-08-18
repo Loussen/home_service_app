@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/jobs/data/models/incoming_job_model.dart';
 import 'package:home_service_app/features/jobs/presentation/cubit/jobs_cubit.dart';
 import 'package:home_service_app/features/jobs/presentation/cubit/jobs_state.dart';
@@ -44,6 +45,7 @@ class _JobsView extends StatelessWidget {
                 style: const TextStyle(color: AppColors.muted),
               ),
             ),
+            const ProfileCompletenessBanner(),
             const SizedBox(height: 8),
             Expanded(
               child: BlocConsumer<JobsCubit, JobsState>(

@@ -29,6 +29,9 @@ class SearchAiState extends Equatable {
     this.selectedCategoryId,
     this.scheduledAt,
     this.timeSlot,
+    this.childAge,
+    this.hasPet,
+    this.budgetMax,
   });
 
   final SearchPhase phase;
@@ -46,6 +49,9 @@ class SearchAiState extends Equatable {
   final int? selectedCategoryId;
   final DateTime? scheduledAt;
   final String? timeSlot;
+  final int? childAge;
+  final bool? hasPet;
+  final double? budgetMax;
 
   SearchAiState copyWith({
     SearchPhase? phase,
@@ -63,12 +69,18 @@ class SearchAiState extends Equatable {
     int? selectedCategoryId,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
     bool clearMessage = false,
     bool clearAudio = false,
     bool clearRequest = false,
     bool clearCategory = false,
     bool clearSchedule = false,
     bool clearTimeSlot = false,
+    bool clearChildAge = false,
+    bool clearHasPet = false,
+    bool clearBudgetMax = false,
   }) {
     return SearchAiState(
       phase: phase ?? this.phase,
@@ -87,6 +99,9 @@ class SearchAiState extends Equatable {
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       scheduledAt: clearSchedule ? null : (scheduledAt ?? this.scheduledAt),
       timeSlot: clearTimeSlot ? null : (timeSlot ?? this.timeSlot),
+      childAge: clearChildAge ? null : (childAge ?? this.childAge),
+      hasPet: clearHasPet ? null : (hasPet ?? this.hasPet),
+      budgetMax: clearBudgetMax ? null : (budgetMax ?? this.budgetMax),
     );
   }
 
@@ -107,5 +122,8 @@ class SearchAiState extends Equatable {
         selectedCategoryId,
         scheduledAt,
         timeSlot,
+        childAge,
+        hasPet,
+        budgetMax,
       ];
 }

@@ -23,7 +23,12 @@ class ProviderProfileModel {
     this.ratingAvg = 0,
     this.ratingCount = 0,
     this.isActive = true,
+    this.isFull = false,
+    this.fullUntil,
+    this.quietHoursStart,
+    this.quietHoursEnd,
     this.schedules = const [],
+    this.userName,
   });
 
   final int id;
@@ -45,7 +50,12 @@ class ProviderProfileModel {
   final double ratingAvg;
   final int ratingCount;
   final bool isActive;
+  final bool isFull;
+  final DateTime? fullUntil;
+  final String? quietHoursStart;
+  final String? quietHoursEnd;
   final List<ScheduleSlot> schedules;
+  final String? userName;
 
   List<int> get categoryIds {
     if (categories.isNotEmpty) {
@@ -93,6 +103,11 @@ class ProviderProfileModel {
       ratingAvg: parseDouble(json['rating_avg']),
       ratingCount: json['rating_count'] as int? ?? 0,
       isActive: json['is_active'] != false,
+      isFull: json['is_full'] == true,
+      fullUntil: DateTime.tryParse('${json['full_until'] ?? ''}'),
+      quietHoursStart: json['quiet_hours_start'] as String?,
+      quietHoursEnd: json['quiet_hours_end'] as String?,
+      userName: json['user_name'] as String?,
       schedules: schedulesJson
           .map((e) => ScheduleSlot.fromJson(e as Map<String, dynamic>))
           .toList(),

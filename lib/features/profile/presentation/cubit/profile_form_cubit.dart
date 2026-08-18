@@ -75,6 +75,9 @@ class ProfileFormCubit extends Cubit<ProfileFormState> {
             longitude: p.longitude,
             schedules: ProfileFormState.fromSlots(p.schedules),
             audioIntroUrl: p.audioIntroUrl,
+            fullThisWeek: p.isFull,
+            quietHoursStart: p.quietHoursStart,
+            quietHoursEnd: p.quietHoursEnd,
           ));
         },
       );
@@ -184,6 +187,14 @@ class ProfileFormCubit extends Cubit<ProfileFormState> {
     emit(state.copyWith(localAudioPath: path));
   }
 
+  void setFullThisWeek(bool value) => emit(state.copyWith(fullThisWeek: value));
+
+  void setQuietHours(String? start, String? end) => emit(state.copyWith(
+        quietHoursStart: start,
+        quietHoursEnd: end,
+        clearQuietHours: true,
+      ));
+
   Future<bool> save() async {
     if (state.categoryIds.isEmpty) {
       emit(state.copyWith(
@@ -207,6 +218,9 @@ class ProfileFormCubit extends Cubit<ProfileFormState> {
       cityId: state.cityId,
       districtId: state.districtId,
       schedules: state.toSlots(),
+      fullThisWeek: state.fullThisWeek,
+      quietHoursStart: state.quietHoursStart,
+      quietHoursEnd: state.quietHoursEnd,
     );
 
     return await result.fold<Future<bool>>(

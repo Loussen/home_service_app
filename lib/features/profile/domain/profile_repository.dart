@@ -26,6 +26,9 @@ abstract class ProfileRepository {
     int? cityId,
     int? districtId,
     bool? isActive,
+    bool? fullThisWeek,
+    String? quietHoursStart,
+    String? quietHoursEnd,
     List<ScheduleSlot> schedules,
   });
 

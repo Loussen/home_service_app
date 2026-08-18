@@ -62,6 +62,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
     int? cityId,
     int? districtId,
     bool? isActive,
+    bool? fullThisWeek,
+    String? quietHoursStart,
+    String? quietHoursEnd,
     List<ScheduleSlot> schedules = const [],
   }) async {
     try {
@@ -77,6 +80,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
           cityId: cityId,
           districtId: districtId,
           schedules: schedules,
+          fullThisWeek: fullThisWeek,
+          quietHoursStart: quietHoursStart,
+          quietHoursEnd: quietHoursEnd,
         ));
       }
       return Right(await _remote.updateProfile(
@@ -92,6 +98,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
         districtId: districtId,
         isActive: isActive,
         schedules: schedules,
+        fullThisWeek: fullThisWeek,
+        quietHoursStart: quietHoursStart,
+        quietHoursEnd: quietHoursEnd,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));

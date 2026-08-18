@@ -12,9 +12,15 @@ class SearchFiltersPanel extends StatelessWidget {
     required this.scheduledAt,
     required this.timeSlot,
     required this.enabled,
+    required this.childAge,
+    required this.hasPet,
+    required this.budgetMax,
     required this.onCategoryChanged,
     required this.onScheduledAtChanged,
     required this.onTimeSlotChanged,
+    required this.onChildAgeChanged,
+    required this.onHasPetChanged,
+    required this.onBudgetMaxChanged,
   });
 
   final List<CategoryModel> categories;
@@ -22,11 +28,18 @@ class SearchFiltersPanel extends StatelessWidget {
   final DateTime? scheduledAt;
   final String? timeSlot;
   final bool enabled;
+  final int? childAge;
+  final bool? hasPet;
+  final double? budgetMax;
   final ValueChanged<int?> onCategoryChanged;
   final ValueChanged<DateTime?> onScheduledAtChanged;
   final ValueChanged<String?> onTimeSlotChanged;
+  final ValueChanged<int?> onChildAgeChanged;
+  final ValueChanged<bool?> onHasPetChanged;
+  final ValueChanged<double?> onBudgetMaxChanged;
 
   static const _slots = ['morning', 'afternoon', 'evening', 'night'];
+  static const _budgetOptions = [20, 40, 60, 100, 150, 250];
 
   List<CategoryModel> get _leaves {
     return CategoryModel.flatten(categories)
@@ -140,6 +153,97 @@ class SearchFiltersPanel extends StatelessWidget {
                 icon: const Icon(Icons.close),
               ),
             ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          t('search.filter_more'),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: t('search.child_age'),
+                  border: const OutlineInputBorder(),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: childAge,
+                    hint: Text(t('search.not_selected')),
+                    items: List.generate(
+                      18,
+                      (i) => DropdownMenuItem<int>(
+                        value: i,
+                        child: Text('$i'),
+                      ),
+                    ),
+                    onChanged: enabled ? onChildAgeChanged : null,
+                  ),
+                ),
+              ),
+            ),
+            if (childAge != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: t('search.clear_filters'),
+                onPressed: enabled ? () => onChildAgeChanged(null) : null,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ChoiceChip(
+              label: Text(t('search.pet_yes')),
+              selected: hasPet == true,
+              selectedColor: AppColors.peach,
+              onSelected: enabled
+                  ? (selected) => onHasPetChanged(selected ? true : null)
+                  : null,
+            ),
+            ChoiceChip(
+              label: Text(t('search.pet_no')),
+              selected: hasPet == false,
+              selectedColor: AppColors.skySoft,
+              onSelected: enabled
+                  ? (selected) => onHasPetChanged(selected ? false : null)
+                  : null,
+            ),
+            if (hasPet != null)
+              ActionChip(
+                label: Text(t('search.clear_filters')),
+                onPressed: enabled ? () => onHasPetChanged(null) : null,
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final budget in _budgetOptions)
+              ChoiceChip(
+                label: Text('<= $budget AZN'),
+                selected: budgetMax?.round() == budget,
+                selectedColor: AppColors.cream,
+                onSelected: enabled
+                    ? (selected) =>
+                        onBudgetMaxChanged(selected ? budget.toDouble() : null)
+                    : null,
+              ),
+            if (budgetMax != null)
+              ActionChip(
+                label: Text(t('search.clear_filters')),
+                onPressed: enabled ? () => onBudgetMaxChanged(null) : null,
+              ),
           ],
         ),
       ],

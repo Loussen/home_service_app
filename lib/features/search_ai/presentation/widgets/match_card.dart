@@ -22,11 +22,14 @@ class MatchCard extends StatelessWidget {
     final p = match.provider;
     final theme = Theme.of(context);
     final score = match.matchScore.round();
-    final title = p?.title?.isNotEmpty == true
-        ? p!.title!
-        : (p?.categoryLabels.isNotEmpty == true
-            ? p!.categoryLabels.first
-            : t('match.provider_fallback'));
+    final name = p?.userName?.trim();
+    final title = (name != null && name.isNotEmpty)
+        ? name
+        : (p?.title?.isNotEmpty == true
+            ? p!.title!
+            : (p?.categoryLabels.isNotEmpty == true
+                ? p!.categoryLabels.first
+                : t('match.provider_fallback')));
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -93,6 +96,17 @@ class MatchCard extends StatelessWidget {
                   _Chip(label: '★ ${p.ratingAvg.toStringAsFixed(1)}'),
               ],
             ),
+            if (match.mergedProfileCount > 1 &&
+                p?.title != null &&
+                p!.title!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                p.title!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
             if (p?.district != null || p?.city != null) ...[
               const SizedBox(height: 8),
               Text(

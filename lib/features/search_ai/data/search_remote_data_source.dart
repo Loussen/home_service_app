@@ -17,6 +17,9 @@ class SearchRemoteDataSource {
     int? categoryId,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   }) async {
     final form = FormData.fromMap({
       'audio': await MultipartFile.fromFile(
@@ -31,6 +34,9 @@ class SearchRemoteDataSource {
       if (scheduledAt != null)
         'scheduled_at': scheduledAt.toUtc().toIso8601String(),
       if (timeSlot != null) 'time_slot': timeSlot,
+      if (childAge != null) 'child_age': childAge,
+      if (hasPet != null) 'has_pet': hasPet ? '1' : '0',
+      if (budgetMax != null) 'budget_max': budgetMax,
     });
 
     final res = await _client.dio.post('/service-requests/audio', data: form);
@@ -48,6 +54,9 @@ class SearchRemoteDataSource {
     bool isUrgent = false,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   }) async {
     final res = await _client.dio.post('/service-requests/text', data: {
       'text': text,
@@ -59,6 +68,9 @@ class SearchRemoteDataSource {
       if (scheduledAt != null)
         'scheduled_at': scheduledAt.toUtc().toIso8601String(),
       if (timeSlot != null) 'time_slot': timeSlot,
+      if (childAge != null) 'child_age': childAge,
+      if (hasPet != null) 'has_pet': hasPet,
+      if (budgetMax != null) 'budget_max': budgetMax,
     });
     return ServiceRequestModel.fromJson(
       res.data['data'] as Map<String, dynamic>,

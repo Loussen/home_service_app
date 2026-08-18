@@ -5,6 +5,7 @@ import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 import 'package:home_service_app/features/profile/presentation/cubit/profile_list_cubit.dart';
 import 'package:home_service_app/features/profile/presentation/cubit/profile_list_state.dart';
@@ -31,6 +32,7 @@ class ProfileListPage extends StatelessWidget {
                       ),
                 ),
               ),
+              const ProfileCompletenessBanner(),
               Expanded(
                 child: BlocConsumer<ProfileListCubit, ProfileListState>(
                   listener: (context, state) {
@@ -242,6 +244,43 @@ class _ProfileCard extends StatelessWidget {
               ),
             ],
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t('profile.availability.full_week')),
+            value: profile.isFull,
+            onChanged: (v) =>
+                context.read<ProfileListCubit>().setFullThisWeek(profile, v),
+          ),
+          if (profile.isFull ||
+              (profile.quietHoursStart != null &&
+                  profile.quietHoursEnd != null)) ...[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (profile.isFull)
+                  Chip(
+                    label: Text(t('profile.badge.full')),
+                    backgroundColor: AppColors.cream,
+                    visualDensity: VisualDensity.compact,
+                    side: BorderSide.none,
+                  ),
+                if (profile.quietHoursStart != null &&
+                    profile.quietHoursEnd != null)
+                  Chip(
+                    label: Text(
+                      t('profile.badge.quiet', params: {
+                        'from': profile.quietHoursStart!,
+                        'to': profile.quietHoursEnd!,
+                      }),
+                    ),
+                    backgroundColor: AppColors.lavender,
+                    visualDensity: VisualDensity.compact,
+                    side: BorderSide.none,
+                  ),
+              ],
+            ),
+          ],
           if (profile.isVerified || profile.isVip) ...[
             const SizedBox(height: 10),
             Text(

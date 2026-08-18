@@ -65,7 +65,9 @@ class _MatchesMapState extends State<MatchesMap> {
           markerId: MarkerId('p_$id'),
           position: LatLng(p.latitude, p.longitude),
           infoWindow: InfoWindow(
-            title: p.title ?? p.category?.nameAz ?? t('match.provider_fallback'),
+            title: (p.userName != null && p.userName!.trim().isNotEmpty)
+                ? p.userName!
+                : (p.title ?? p.category?.nameAz ?? t('match.provider_fallback')),
             snippet: t('match.score', params: {'score': '${m.matchScore.round()}'}),
           ),
           icon: BitmapDescriptor.defaultMarkerWithHue(

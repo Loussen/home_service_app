@@ -91,9 +91,13 @@ class _OnboardingViewState extends State<_OnboardingView> {
       );
       return;
     }
-    await context.read<AuthCubit>().updateName(_name.text.trim());
+    final auth = context.read<AuthCubit>();
+    await auth.updateName(_name.text.trim());
     final ok = await context.read<ProfileFormCubit>().save();
-    if (ok && mounted) context.go('/search');
+    if (!mounted || !ok) return;
+    await auth.bootstrap();
+    if (!mounted) return;
+    context.go('/search');
   }
 
   void _back() {

@@ -51,6 +51,18 @@ class SearchAiCubit extends Cubit<SearchAiState> {
         timeSlot: slot,
         clearTimeSlot: slot == null,
       ));
+  void setChildAge(int? age) => emit(state.copyWith(
+        childAge: age,
+        clearChildAge: age == null,
+      ));
+  void setHasPet(bool? hasPet) => emit(state.copyWith(
+        hasPet: hasPet,
+        clearHasPet: hasPet == null,
+      ));
+  void setBudgetMax(double? budget) => emit(state.copyWith(
+        budgetMax: budget,
+        clearBudgetMax: budget == null,
+      ));
 
   void setText(String value) => emit(state.copyWith(text: value));
 
@@ -175,6 +187,9 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             categoryId: state.selectedCategoryId,
             scheduledAt: state.scheduledAt,
             timeSlot: state.timeSlot,
+            childAge: state.childAge,
+            hasPet: state.hasPet,
+            budgetMax: state.budgetMax,
           )
         : await _repo.submitText(
             text: text,
@@ -185,6 +200,9 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             isUrgent: state.isUrgent,
             scheduledAt: state.scheduledAt,
             timeSlot: state.timeSlot,
+            childAge: state.childAge,
+            hasPet: state.hasPet,
+            budgetMax: state.budgetMax,
           );
 
     await result.fold(

@@ -12,6 +12,9 @@ abstract class SearchRepository {
     int? categoryId,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   });
 
   Future<Either<Failure, ServiceRequestModel>> submitText({
@@ -23,6 +26,9 @@ abstract class SearchRepository {
     bool isUrgent,
     DateTime? scheduledAt,
     String? timeSlot,
+    int? childAge,
+    bool? hasPet,
+    double? budgetMax,
   });
 
   Future<Either<Failure, ServiceRequestModel>> getRequest(int id);
