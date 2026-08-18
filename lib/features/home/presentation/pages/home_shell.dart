@@ -11,7 +11,7 @@ class HomeShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ev və Ailə Xidmətləri'),
+        title: const Text('MySancho'),
         actions: [
           IconButton(
             onPressed: () => context.push('/wallet'),

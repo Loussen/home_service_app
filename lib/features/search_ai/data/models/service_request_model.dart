@@ -1,6 +1,30 @@
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
+
+class MatchReason {
+  const MatchReason({required this.key, this.params = const {}});
+
+  final String key;
+  final Map<String, String> params;
+
+  factory MatchReason.fromJson(Map<String, dynamic> json) {
+    final paramsRaw = json['params'];
+    final params = <String, String>{};
+    if (paramsRaw is Map) {
+      for (final e in paramsRaw.entries) {
+        params['${e.key}'] = '${e.value}';
+      }
+    }
+    return MatchReason(
+      key: (json['key'] as String?) ?? '',
+      params: params,
+    );
+  }
+
+  String get label => t(key, params: params.isEmpty ? null : params);
+}
 
 class MatchModel {
   const MatchModel({
@@ -8,6 +32,7 @@ class MatchModel {
     required this.distanceKm,
     this.id,
     this.scoreBreakdown,
+    this.reasons = const [],
     this.provider,
   });
 
@@ -15,15 +40,25 @@ class MatchModel {
   final double matchScore;
   final double distanceKm;
   final Map<String, dynamic>? scoreBreakdown;
+  final List<MatchReason> reasons;
   final ProviderProfileModel? provider;
 
   factory MatchModel.fromJson(Map<String, dynamic> json) {
     final providerJson = json['provider'] as Map<String, dynamic>?;
+    final reasonsRaw = json['reasons'];
+    final reasons = reasonsRaw is List
+        ? reasonsRaw
+            .whereType<Map>()
+            .map((e) => MatchReason.fromJson(Map<String, dynamic>.from(e)))
+            .where((r) => r.key.isNotEmpty)
+            .toList()
+        : <MatchReason>[];
     return MatchModel(
       id: json['id'] as int?,
       matchScore: parseDouble(json['match_score']),
       distanceKm: parseDouble(json['distance_km']),
       scoreBreakdown: json['score_breakdown'] as Map<String, dynamic>?,
+      reasons: reasons,
       provider: providerJson != null
           ? ProviderProfileModel.fromJson(providerJson)
           : null,
@@ -62,6 +97,13 @@ class ServiceRequestModel {
 
   bool get isProcessing => status == 'processing';
   bool get isReady => status == 'active' || status == 'matched';
+  bool get transcriptionFailed => parsedCriteria?['transcription_failed'] == true;
+
+  Map<String, dynamic>? get searchMeta {
+    final raw = parsedCriteria?['search_meta'];
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return null;
+  }
 
   factory ServiceRequestModel.fromJson(Map<String, dynamic> json) {
     final categoryJson = json['category'] as Map<String, dynamic>?;

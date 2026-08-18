@@ -14,6 +14,9 @@ class SearchRemoteDataSource {
     required double longitude,
     String? address,
     bool isUrgent = false,
+    int? categoryId,
+    DateTime? scheduledAt,
+    String? timeSlot,
   }) async {
     final form = FormData.fromMap({
       'audio': await MultipartFile.fromFile(
@@ -24,6 +27,10 @@ class SearchRemoteDataSource {
       'longitude': longitude.toString(),
       if (address != null) 'address': address,
       'is_urgent': isUrgent ? '1' : '0',
+      if (categoryId != null) 'category_id': categoryId,
+      if (scheduledAt != null)
+        'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      if (timeSlot != null) 'time_slot': timeSlot,
     });
 
     final res = await _client.dio.post('/service-requests/audio', data: form);
@@ -39,6 +46,8 @@ class SearchRemoteDataSource {
     int? categoryId,
     String? address,
     bool isUrgent = false,
+    DateTime? scheduledAt,
+    String? timeSlot,
   }) async {
     final res = await _client.dio.post('/service-requests/text', data: {
       'text': text,
@@ -47,6 +56,9 @@ class SearchRemoteDataSource {
       if (categoryId != null) 'category_id': categoryId,
       if (address != null) 'address': address,
       'is_urgent': isUrgent,
+      if (scheduledAt != null)
+        'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      if (timeSlot != null) 'time_slot': timeSlot,
     });
     return ServiceRequestModel.fromJson(
       res.data['data'] as Map<String, dynamic>,

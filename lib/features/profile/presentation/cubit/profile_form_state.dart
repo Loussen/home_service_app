@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/data/models/location_models.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
 
@@ -7,9 +8,12 @@ class ProfileFormState extends Equatable {
   const ProfileFormState({
     this.profileId,
     this.categories = const [],
-    this.categoryId,
+    this.categoryIds = const [],
     this.title = '',
     this.bio = '',
+    this.locations = const [],
+    this.cityId,
+    this.districtId,
     this.city = 'Bakı',
     this.district = '',
     this.latitude = 40.4093,
@@ -25,7 +29,10 @@ class ProfileFormState extends Equatable {
 
   final int? profileId;
   final List<CategoryModel> categories;
-  final int? categoryId;
+  final List<int> categoryIds;
+  final List<CityModel> locations;
+  final int? cityId;
+  final int? districtId;
   final String title;
   final String bio;
   final String city;
@@ -77,7 +84,10 @@ class ProfileFormState extends Equatable {
   ProfileFormState copyWith({
     int? profileId,
     List<CategoryModel>? categories,
-    int? categoryId,
+    List<int>? categoryIds,
+    List<CityModel>? locations,
+    int? cityId,
+    int? districtId,
     String? title,
     String? bio,
     String? city,
@@ -93,11 +103,15 @@ class ProfileFormState extends Equatable {
     ProviderProfileModel? savedProfile,
     bool clearMessage = false,
     bool clearSaved = false,
+    bool clearDistrict = false,
   }) {
     return ProfileFormState(
       profileId: profileId ?? this.profileId,
       categories: categories ?? this.categories,
-      categoryId: categoryId ?? this.categoryId,
+      categoryIds: categoryIds ?? this.categoryIds,
+      locations: locations ?? this.locations,
+      cityId: cityId ?? this.cityId,
+      districtId: clearDistrict ? districtId : (districtId ?? this.districtId),
       title: title ?? this.title,
       bio: bio ?? this.bio,
       city: city ?? this.city,
@@ -118,7 +132,10 @@ class ProfileFormState extends Equatable {
   List<Object?> get props => [
         profileId,
         categories,
-        categoryId,
+        categoryIds,
+        locations,
+        cityId,
+        districtId,
         title,
         bio,
         city,

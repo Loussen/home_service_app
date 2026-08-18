@@ -9,6 +9,9 @@ abstract class SearchRepository {
     required double longitude,
     String? address,
     bool isUrgent,
+    int? categoryId,
+    DateTime? scheduledAt,
+    String? timeSlot,
   });
 
   Future<Either<Failure, ServiceRequestModel>> submitText({
@@ -18,6 +21,8 @@ abstract class SearchRepository {
     int? categoryId,
     String? address,
     bool isUrgent,
+    DateTime? scheduledAt,
+    String? timeSlot,
   });
 
   Future<Either<Failure, ServiceRequestModel>> getRequest(int id);

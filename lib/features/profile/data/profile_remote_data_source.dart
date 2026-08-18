@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:home_service_app/core/network/api_client.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/data/models/location_models.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
 
@@ -14,6 +15,14 @@ class ProfileRemoteDataSource {
     final list = res.data['data'] as List<dynamic>;
     return list
         .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<CityModel>> cities() async {
+    final res = await _client.dio.get('/cities');
+    final list = res.data['data'] as List<dynamic>;
+    return list
+        .map((e) => CityModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -33,23 +42,28 @@ class ProfileRemoteDataSource {
   }
 
   Future<ProviderProfileModel> createProfile({
-    required int categoryId,
+    required List<int> categoryIds,
     required double latitude,
     required double longitude,
     String? title,
     String? bio,
     String? city,
     String? district,
+    int? cityId,
+    int? districtId,
     List<ScheduleSlot> schedules = const [],
   }) async {
     final res = await _client.dio.post('/provider-profiles', data: {
-      'category_id': categoryId,
+      'category_ids': categoryIds,
+      'category_id': categoryIds.first,
       'latitude': latitude,
       'longitude': longitude,
       'title': title,
       'bio': bio,
       'city': city,
       'district': district,
+      if (cityId != null) 'city_id': cityId,
+      if (districtId != null) 'district_id': districtId,
       'schedules': schedules.map((s) => s.toJson()).toList(),
     });
     return ProviderProfileModel.fromJson(
@@ -59,24 +73,29 @@ class ProfileRemoteDataSource {
 
   Future<ProviderProfileModel> updateProfile({
     required int id,
-    required int categoryId,
+    required List<int> categoryIds,
     required double latitude,
     required double longitude,
     String? title,
     String? bio,
     String? city,
     String? district,
+    int? cityId,
+    int? districtId,
     bool? isActive,
     List<ScheduleSlot> schedules = const [],
   }) async {
     final res = await _client.dio.put('/provider-profiles/$id', data: {
-      'category_id': categoryId,
+      'category_ids': categoryIds,
+      'category_id': categoryIds.first,
       'latitude': latitude,
       'longitude': longitude,
       'title': title,
       'bio': bio,
       'city': city,
       'district': district,
+      if (cityId != null) 'city_id': cityId,
+      if (districtId != null) 'district_id': districtId,
       if (isActive != null) 'is_active': isActive,
       'schedules': schedules.map((s) => s.toJson()).toList(),
     });

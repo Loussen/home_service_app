@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
 
 class ScheduleMatrix extends StatelessWidget {
@@ -13,42 +15,72 @@ class ScheduleMatrix extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('İş cədvəli', style: theme.textTheme.titleMedium),
+        Text(
+          t('schedule.title'),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.primary,
+              ),
+        ),
         const SizedBox(height: 4),
         Text(
-          'Uyğun vaxtları seçin (yaşıl = mövcud)',
-          style: theme.textTheme.bodySmall,
+          t('schedule.hint'),
+          style: const TextStyle(color: AppColors.muted),
         ),
         const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+          ),
           child: Table(
-            defaultColumnWidth: const FixedColumnWidth(52),
-            border: TableBorder.all(
-              color: theme.dividerColor.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            columnWidths: const {
+              0: FixedColumnWidth(36),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
               TableRow(
+                decoration: const BoxDecoration(color: Colors.white),
                 children: [
-                  const _HeaderCell(''),
-                  for (final day in WeekDays.labels.entries)
-                    _HeaderCell(day.value),
+                  const SizedBox.shrink(),
+                  for (final slot in TimeSlots.all)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                      child: Text(
+                        TimeSlots.labelAz(slot),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-              for (final slot in TimeSlots.all)
+              for (var i = 0; i < WeekDays.labels.length; i++)
                 TableRow(
+                  decoration: BoxDecoration(
+                    color: i.isEven ? AppColors.peachRow : Colors.white,
+                  ),
                   children: [
-                    _HeaderCell(TimeSlots.labelAz(slot), small: true),
-                    for (var day = 1; day <= 7; day++)
-                      _SlotCell(
-                        active: values['${day}_$slot'] ?? false,
-                        onTap: () => onToggle(day, slot),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        WeekDays.labels[i + 1]!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    for (final slot in TimeSlots.all)
+                      _DotCell(
+                        active: values['${i + 1}_$slot'] ?? false,
+                        onTap: () => onToggle(i + 1, slot),
                       ),
                   ],
                 ),
@@ -60,47 +92,31 @@ class ScheduleMatrix extends StatelessWidget {
   }
 }
 
-class _HeaderCell extends StatelessWidget {
-  const _HeaderCell(this.text, {this.small = false});
-
-  final String text;
-  final bool small;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: small ? 10 : 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _SlotCell extends StatelessWidget {
-  const _SlotCell({required this.active, required this.onTap});
+class _DotCell extends StatelessWidget {
+  const _DotCell({required this.active, required this.onTap});
 
   final bool active;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return InkWell(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         height: 40,
-        color: active ? primary.withValues(alpha: 0.2) : Colors.transparent,
-        alignment: Alignment.center,
-        child: Icon(
-          active ? Icons.check_circle : Icons.circle_outlined,
-          size: 18,
-          color: active ? primary : Colors.grey,
+        child: Center(
+          child: Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active ? AppColors.primary : Colors.transparent,
+              border: Border.all(
+                color: active ? AppColors.primary : AppColors.divider,
+                width: 1.2,
+              ),
+            ),
+          ),
         ),
       ),
     );

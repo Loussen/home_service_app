@@ -9,6 +9,7 @@ class UserModel {
     this.name,
     this.avatarUrl,
     this.status = 'active',
+    this.providerProfilesCount = 0,
   });
 
   final int id;
@@ -18,6 +19,11 @@ class UserModel {
   final String activeRole;
   final double balance;
   final String status;
+  final int providerProfilesCount;
+  bool get isProvider => activeRole == 'provider';
+  bool get isClient => activeRole == 'client';
+  bool get needsProviderOnboarding =>
+      isProvider && providerProfilesCount == 0;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -28,6 +34,7 @@ class UserModel {
       activeRole: json['active_role'] as String? ?? 'client',
       balance: parseDouble(json['balance']),
       status: json['status'] as String? ?? 'active',
+      providerProfilesCount: (json['provider_profiles_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -60,7 +61,7 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
     if (!await _recorder.hasPermission()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mikrofon icazəsi lazımdır')),
+          SnackBar(content: Text(t('search.mic_required'))),
         );
       }
       return;
@@ -115,7 +116,7 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
       if (mounted) {
         setState(() => _playing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Səs oxunmadı')),
+          SnackBar(content: Text(t('audio.play_failed'))),
         );
       }
     }
@@ -133,10 +134,10 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Audio intro', style: Theme.of(context).textTheme.titleMedium),
+            Text(t('audio.title'), style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
-              'Qısa səsli tanıtım (maks. 60 san)',
+              t('audio.hint'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -145,7 +146,11 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
                 FilledButton.tonalIcon(
                   onPressed: _toggleRecord,
                   icon: Icon(_recording ? Icons.stop : Icons.mic),
-                  label: Text(_recording ? 'Dayandır $mm:$ss' : 'Yaz'),
+                  label: Text(
+                    _recording
+                        ? t('audio.record_stop', params: {'time': '$mm:$ss'})
+                        : t('audio.record'),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 if (hasAudio)
@@ -159,8 +164,8 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
               const SizedBox(height: 8),
               Text(
                 _path != null
-                    ? 'Yeni yazı hazırdır (yadda saxlananda yüklənəcək)'
-                    : 'Mövcud intro yüklənib',
+                    ? t('audio.ready_upload')
+                    : t('audio.existing'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

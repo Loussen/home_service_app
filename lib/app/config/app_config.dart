@@ -9,9 +9,11 @@ class AppConfig {
 
   /// Google Maps API key (Maps SDK for iOS / Android).
   /// Without this, match screen shows a list-only placeholder (no crash).
+  /// Local: copy `dart_defines.example.json` → `dart_defines.json` (gitignored).
   /// ```bash
-  /// flutter run --dart-define=GOOGLE_MAPS_API_KEY=AIza...
+  /// flutter run --dart-define-from-file=dart_defines.json
   /// ```
+  /// Hot reload is not enough — Maps SDK reads the key at native launch.
   static const String googleMapsApiKey = String.fromEnvironment(
     'GOOGLE_MAPS_API_KEY',
     defaultValue: '',
@@ -19,7 +21,16 @@ class AppConfig {
 
   static bool get hasGoogleMapsKey => googleMapsApiKey.trim().isNotEmpty;
 
-  static const String appName = 'Ev və Ailə Xidmətləri';
+  /// Debug only: always open provider onboarding after login / hot reload.
+  /// ```bash
+  /// flutter run --dart-define=FORCE_ONBOARDING=true --dart-define-from-file=dart_defines.json
+  /// ```
+  static const bool forceOnboarding = bool.fromEnvironment(
+    'FORCE_ONBOARDING',
+    defaultValue: false,
+  );
+
+  static const String appName = 'MySancho';
 
   static String get apiHostHint => apiBaseUrl;
 }

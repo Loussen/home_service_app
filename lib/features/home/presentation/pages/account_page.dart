@@ -1,0 +1,316 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:home_service_app/app/config/app_colors.dart';
+import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/remote/app_locale_service.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/remote/change_app_locale.dart';
+import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+
+class AccountPage extends StatelessWidget {
+  const AccountPage({super.key});
+
+  Future<void> _pickLanguage(BuildContext context) async {
+    final service = getIt<AppLocaleService>();
+    final codes = AppRemoteConfig.instance.supportedLocales.isNotEmpty
+        ? AppRemoteConfig.instance.supportedLocales
+        : service.supportedLocales;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    t('account.menu.language'),
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+              for (final code in codes)
+                ListTile(
+                  title: Text(
+                    AppRemoteConfig.instance.localeLabels[code] ??
+                        service.labelFor(code),
+                  ),
+                  trailing: service.locale == code
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (service.locale != code) {
+                      await changeAppLocale(code);
+                    }
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        final user = state.user;
+        final name = (user?.name?.isNotEmpty == true)
+            ? user!.name!
+            : t('account.user_fallback');
+        final role = user?.activeRole == 'provider'
+            ? t('account.role.provider')
+            : t('account.role.client');
+        final initials = name.isNotEmpty
+            ? name.trim().split(' ').map((p) => p[0]).take(2).join().toUpperCase()
+            : 'U';
+
+        return Scaffold(
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.peach,
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: Theme.of(context).textTheme.titleLarge),
+                          Text(role, style: const TextStyle(color: AppColors.muted)),
+                        ],
+                      ),
+                    ),
+                    _RoundIcon(icon: Icons.photo_camera_outlined, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    _RoundIcon(icon: Icons.notifications_outlined, color: const Color(0xFFE8B923)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 128,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      if (user?.isProvider == true) ...[
+                        _PastelCard(
+                          color: AppColors.skySoft,
+                          icon: Icons.mic_none,
+                          title: t('account.card.audio_intro'),
+                          onTap: () => context.go('/profiles'),
+                        ),
+                        _PastelCard(
+                          color: AppColors.cream,
+                          icon: Icons.layers_outlined,
+                          title: t('account.card.profiles'),
+                          onTap: () => context.go('/profiles'),
+                        ),
+                        _PastelCard(
+                          color: AppColors.lavender,
+                          icon: Icons.account_balance_wallet_outlined,
+                          title: t('account.card.wallet_bump'),
+                          onTap: () => context.push('/wallet'),
+                        ),
+                        _PastelCard(
+                          color: const Color(0xFFE8F6EA),
+                          icon: Icons.verified_outlined,
+                          title: t('account.card.verify'),
+                          onTap: () => context.push('/verification'),
+                        ),
+                      ] else ...[
+                        _PastelCard(
+                          color: AppColors.skySoft,
+                          icon: Icons.mic_none,
+                          title: t('account.card.voice_search'),
+                          onTap: () => context.go('/search'),
+                        ),
+                        _PastelCard(
+                          color: AppColors.cream,
+                          icon: Icons.assignment_outlined,
+                          title: t('account.card.requests'),
+                          onTap: () => context.go('/profiles'),
+                        ),
+                        _PastelCard(
+                          color: AppColors.lavender,
+                          icon: Icons.chat_bubble_outline,
+                          title: t('account.card.chats'),
+                          onTap: () => context.go('/chat'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _MenuTile(
+                  icon: Icons.calendar_month_outlined,
+                  label: t('account.menu.bookings'),
+                  onTap: () => context.push('/bookings'),
+                ),
+                _MenuTile(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: t('account.menu.wallet', params: {
+                    'balance': user?.balance.toStringAsFixed(2) ?? '0',
+                  }),
+                  onTap: () => context.push('/wallet'),
+                ),
+                if (user?.isProvider == true)
+                  _MenuTile(
+                    icon: Icons.verified_outlined,
+                    label: t('account.menu.verify'),
+                    onTap: () => context.push('/verification'),
+                  ),
+                _MenuTile(
+                  icon: Icons.star_outline,
+                  label: t('account.menu.reviews'),
+                  onTap: () => context.push('/reviews'),
+                ),
+                _MenuTile(
+                  icon: Icons.bookmark_border,
+                  label: t('account.menu.favorites'),
+                  onTap: () {},
+                ),
+                _MenuTile(
+                  icon: Icons.swap_horiz,
+                  label: t('account.menu.switch_role'),
+                  onTap: () => context.push('/role'),
+                ),
+                _MenuTile(
+                  icon: Icons.language,
+                  label: t('account.menu.language'),
+                  trailing: Text(
+                    getIt<AppLocaleService>().labelFor(
+                      getIt<AppLocaleService>().locale,
+                    ),
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                  onTap: () => _pickLanguage(context),
+                ),
+                _MenuTile(
+                  icon: Icons.settings_outlined,
+                  label: t('account.menu.settings'),
+                  onTap: () {},
+                ),
+                _MenuTile(
+                  icon: Icons.logout,
+                  label: t('account.menu.logout'),
+                  onTap: () => context.read<AuthCubit>().logout(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon({required this.icon, required this.color});
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 18, color: color),
+    );
+  }
+}
+
+class _PastelCard extends StatelessWidget {
+  const _PastelCard({
+    required this.color,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: AppColors.ink),
+              const Spacer(),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w800, height: 1.2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: AppColors.sky),
+      title: Text(label),
+      trailing: trailing ??
+          const Icon(Icons.chevron_right, color: AppColors.muted),
+      onTap: onTap,
+    );
+  }
+}

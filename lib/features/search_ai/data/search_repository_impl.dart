@@ -17,6 +17,9 @@ class SearchRepositoryImpl implements SearchRepository {
     required double longitude,
     String? address,
     bool isUrgent = false,
+    int? categoryId,
+    DateTime? scheduledAt,
+    String? timeSlot,
   }) async {
     try {
       return Right(await _remote.submitAudio(
@@ -25,6 +28,9 @@ class SearchRepositoryImpl implements SearchRepository {
         longitude: longitude,
         address: address,
         isUrgent: isUrgent,
+        categoryId: categoryId,
+        scheduledAt: scheduledAt,
+        timeSlot: timeSlot,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));
@@ -39,6 +45,8 @@ class SearchRepositoryImpl implements SearchRepository {
     int? categoryId,
     String? address,
     bool isUrgent = false,
+    DateTime? scheduledAt,
+    String? timeSlot,
   }) async {
     try {
       return Right(await _remote.submitText(
@@ -48,6 +56,8 @@ class SearchRepositoryImpl implements SearchRepository {
         categoryId: categoryId,
         address: address,
         isUrgent: isUrgent,
+        scheduledAt: scheduledAt,
+        timeSlot: timeSlot,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));

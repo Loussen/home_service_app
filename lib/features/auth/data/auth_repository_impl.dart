@@ -23,11 +23,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserModel>> verifyOtp(String phone, String code) async {
+  Future<Either<Failure, ({UserModel user, bool isNew})>> verifyOtp(
+    String phone,
+    String code,
+  ) async {
     try {
       final result = await _remote.verifyOtp(phone, code);
       await _tokens.saveToken(result.token);
-      return Right(result.user);
+      return Right((user: result.user, isNew: result.isNew));
     } on DioException catch (e) {
       return Left(ServerFailure(_message(e)));
     }
@@ -53,6 +56,15 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await _remote.setRole(role);
       return Right(user);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_message(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserModel>> updateProfile({String? name}) async {
+    try {
+      return Right(await _remote.updateProfile(name: name));
     } on DioException catch (e) {
       return Left(ServerFailure(_message(e)));
     }

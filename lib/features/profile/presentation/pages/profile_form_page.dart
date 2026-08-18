@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/profile/presentation/cubit/profile_form_cubit.dart';
 import 'package:home_service_app/features/profile/presentation/cubit/profile_form_state.dart';
 import 'package:home_service_app/features/profile/presentation/widgets/audio_intro_recorder.dart';
+import 'package:home_service_app/features/profile/presentation/widgets/work_location_picker.dart';
 import 'package:home_service_app/features/profile/presentation/widgets/schedule_matrix.dart';
+import 'package:home_service_app/features/profile/presentation/widgets/searchable_category_picker.dart';
 
 class ProfileFormPage extends StatelessWidget {
   const ProfileFormPage({super.key, this.profileId});
@@ -35,7 +38,7 @@ class _ProfileFormView extends StatelessWidget {
         }
         if (state.savedProfile != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profil yadda saxlanıldı')),
+            SnackBar(content: Text(t('profile.form.saved'))),
           );
           context.pop(true);
         }
@@ -46,35 +49,26 @@ class _ProfileFormView extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(isEdit ? 'Profil redaktə' : 'Yeni profil'),
+            title: Text(
+              isEdit ? t('profile.form.edit_title') : t('profile.form.new_title'),
+            ),
           ),
           body: state.loading
               ? const Center(child: CircularProgressIndicator())
               : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    DropdownButtonFormField<int>(
-                      key: ValueKey(state.categoryId),
-                      initialValue: state.categoryId,
-                      decoration: const InputDecoration(labelText: 'Kateqoriya'),
-                      items: state.categories
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.nameAz),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) cubit.setCategory(v);
-                      },
+                    SearchableCategoryPicker(
+                      categories: state.categories,
+                      selectedIds: state.categoryIds,
+                      onChanged: cubit.setCategoryIds,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       initialValue: state.title,
-                      decoration: const InputDecoration(
-                        labelText: 'Başlıq',
-                        hintText: 'məs. Təcrübəli dayə',
+                      decoration: InputDecoration(
+                        labelText: t('profile.form.title_label'),
+                        hintText: t('onboarding.title_hint'),
                       ),
                       onChanged: cubit.setTitle,
                     ),
@@ -82,44 +76,23 @@ class _ProfileFormView extends StatelessWidget {
                     TextFormField(
                       initialValue: state.bio,
                       maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Haqqında',
+                      decoration: InputDecoration(
+                        labelText: t('profile.form.bio_label'),
                       ),
                       onChanged: cubit.setBio,
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: state.city,
-                            decoration: const InputDecoration(labelText: 'Şəhər'),
-                            onChanged: cubit.setCity,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: state.district,
-                            decoration:
-                                const InputDecoration(labelText: 'Rayon'),
-                            onChanged: cubit.setDistrict,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.my_location),
-                      title: Text(
-                        '${state.latitude.toStringAsFixed(5)}, ${state.longitude.toStringAsFixed(5)}',
-                      ),
-                      subtitle: const Text('İşə çıxdığınız məkan'),
-                      trailing: TextButton(
-                        onPressed: cubit.useCurrentLocation,
-                        child: const Text('Yenilə'),
-                      ),
+                    WorkLocationPicker(
+                      cities: state.locations,
+                      cityId: state.cityId,
+                      districtId: state.districtId,
+                      latitude: state.latitude,
+                      longitude: state.longitude,
+                      onCity: cubit.setCityId,
+                      onDistrict: cubit.setDistrictId,
+                      onCoordinates: cubit.setCoordinates,
+                      onPlaceResolved: cubit.applyPlace,
+                      onUseGps: cubit.useCurrentLocation,
                     ),
                     const SizedBox(height: 12),
                     ScheduleMatrix(
@@ -138,7 +111,9 @@ class _ProfileFormView extends StatelessWidget {
                           ? null
                           : () => cubit.save(),
                       child: Text(
-                        state.saving ? 'Saxlanılır...' : 'Yadda saxla',
+                        state.saving
+                            ? t('profile.form.saving')
+                            : t('profile.form.save'),
                       ),
                     ),
                   ],

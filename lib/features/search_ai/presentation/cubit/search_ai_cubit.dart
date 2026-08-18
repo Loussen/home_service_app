@@ -1,16 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/domain/profile_repository.dart';
 import 'package:home_service_app/features/search_ai/domain/search_repository.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_state.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 class SearchAiCubit extends Cubit<SearchAiState> {
-  SearchAiCubit(this._repo) : super(const SearchAiState());
+  SearchAiCubit(this._repo, this._profiles) : super(const SearchAiState());
 
   final SearchRepository _repo;
+  final ProfileRepository _profiles;
   final AudioRecorder _recorder = AudioRecorder();
   Timer? _recordTimer;
   Timer? _pollTimer;
@@ -18,11 +22,41 @@ class SearchAiCubit extends Cubit<SearchAiState> {
 
   Future<void> init() async {
     emit(state.copyWith(phase: SearchPhase.locating, clearMessage: true));
-    await _resolveLocation();
+    await Future.wait([
+      _resolveLocation(),
+      _loadCategories(),
+    ]);
     emit(state.copyWith(phase: SearchPhase.idle));
   }
 
+  Future<void> _loadCategories() async {
+    final result = await _profiles.categories();
+    result.fold(
+      (_) {},
+      (cats) => emit(state.copyWith(categories: cats)),
+    );
+  }
+
+  void setCategory(int? id) => emit(state.copyWith(
+        selectedCategoryId: id,
+        clearCategory: id == null,
+      ));
+
+  void setScheduledAt(DateTime? value) => emit(state.copyWith(
+        scheduledAt: value,
+        clearSchedule: value == null,
+      ));
+
+  void setTimeSlot(String? slot) => emit(state.copyWith(
+        timeSlot: slot,
+        clearTimeSlot: slot == null,
+      ));
+
   void setText(String value) => emit(state.copyWith(text: value));
+
+  void setLocation(double lat, double lng, String? address) {
+    emit(state.copyWith(latitude: lat, longitude: lng, address: address));
+  }
 
   void setUrgent(bool value) => emit(state.copyWith(isUrgent: value));
 
@@ -55,7 +89,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     if (!await _recorder.hasPermission()) {
       emit(state.copyWith(
         phase: SearchPhase.error,
-        message: 'Mikrofon icazəsi lazımdır',
+        message: t('search.mic_required'),
       ));
       return;
     }
@@ -89,6 +123,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
 
   Future<void> _stopRecording() async {
     _recordTimer?.cancel();
+    final seconds = state.recordSeconds;
     final path = await _recorder.stop();
     emit(state.copyWith(
       isRecording: false,
@@ -96,18 +131,32 @@ class SearchAiCubit extends Cubit<SearchAiState> {
       localAudioPath: path,
       recordSeconds: 0,
     ));
+    if (path != null && seconds >= 1) {
+      await submit();
+    }
   }
 
   Future<void> submit() async {
     final hasAudio = state.localAudioPath != null;
-    final hasText = state.text.trim().isNotEmpty;
+    var text = state.text.trim();
+    final hasText = text.isNotEmpty;
+    final hasCategory = state.selectedCategoryId != null;
 
-    if (!hasAudio && !hasText) {
+    if (!hasAudio && !hasText && !hasCategory) {
       emit(state.copyWith(
         phase: SearchPhase.error,
-        message: 'Səs yazın və ya mətni daxil edin',
+        message: t('search.input_required'),
       ));
       return;
+    }
+
+    if (!hasAudio && !hasText && hasCategory) {
+      final cat = state.categories
+          .expand((c) => CategoryModel.flatten([c]))
+          .map((e) => e.$1)
+          .where((c) => c.id == state.selectedCategoryId)
+          .firstOrNull;
+      text = cat?.nameAz ?? t('search.category_fallback');
     }
 
     emit(state.copyWith(
@@ -121,13 +170,21 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             filePath: state.localAudioPath!,
             latitude: state.latitude,
             longitude: state.longitude,
+            address: state.address,
             isUrgent: state.isUrgent,
+            categoryId: state.selectedCategoryId,
+            scheduledAt: state.scheduledAt,
+            timeSlot: state.timeSlot,
           )
         : await _repo.submitText(
-            text: state.text.trim(),
+            text: text,
             latitude: state.latitude,
             longitude: state.longitude,
+            categoryId: state.selectedCategoryId,
+            address: state.address,
             isUrgent: state.isUrgent,
+            scheduledAt: state.scheduledAt,
+            timeSlot: state.timeSlot,
           );
 
     await result.fold(
@@ -160,7 +217,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
         _pollTimer?.cancel();
         emit(state.copyWith(
           phase: SearchPhase.results,
-          message: 'Emal hələ davam edir — sonra yeniləyin',
+          message: t('search.still_processing'),
         ));
         return;
       }
@@ -200,7 +257,8 @@ class SearchAiCubit extends Cubit<SearchAiState> {
       (f) => emit(state.copyWith(message: f.message)),
       (data) => emit(state.copyWith(
         request: data.request,
-        message: 'Təcili bildiriş göndərildi. Qalan: ${data.balance} AZN',
+        message: t('search.urgent_sent',
+            params: {'balance': '${data.balance}'}),
       )),
     );
   }
@@ -211,6 +269,8 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     emit(SearchAiState(
       latitude: state.latitude,
       longitude: state.longitude,
+      address: state.address,
+      categories: state.categories,
     ));
   }
 

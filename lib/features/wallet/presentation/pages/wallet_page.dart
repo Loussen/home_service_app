@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/wallet/presentation/cubit/wallet_cubit.dart';
 
 class WalletPage extends StatelessWidget {
@@ -11,7 +12,7 @@ class WalletPage extends StatelessWidget {
     return BlocProvider(
       create: (_) => getIt<WalletCubit>()..load(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Pul kisəsi')),
+        appBar: AppBar(title: Text(t('wallet.title'))),
         body: BlocBuilder<WalletCubit, WalletState>(
           builder: (context, state) {
             if (state.loading) {
@@ -25,10 +26,10 @@ class WalletPage extends StatelessWidget {
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 24),
-                Text('Tranzaksiyalar', style: Theme.of(context).textTheme.titleMedium),
+                Text(t('wallet.transactions'), style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 if (state.transactions.isEmpty)
-                  const Text('Hələ tranzaksiya yoxdur')
+                  Text(t('wallet.empty'))
                 else
                   ...state.transactions.map((t) {
                     final map = t as Map<String, dynamic>;

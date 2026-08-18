@@ -37,8 +37,8 @@ class TimeSlots {
 
   static String labelAz(String slot) => switch (slot) {
         'morning' => 'Səhər',
-        'afternoon' => 'Günorta',
-        'evening' => 'Axşam',
+        'afternoon' => 'Gün.',
+        'evening' => 'Axş.',
         'night' => 'Gecə',
         _ => slot,
       };

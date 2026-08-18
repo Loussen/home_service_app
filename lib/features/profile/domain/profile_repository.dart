@@ -1,11 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:home_service_app/core/error/failures.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/data/models/location_models.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
 
 abstract class ProfileRepository {
   Future<Either<Failure, List<CategoryModel>>> categories();
+
+  Future<Either<Failure, List<CityModel>>> cities();
 
   Future<Either<Failure, List<ProviderProfileModel>>> listProfiles();
 
@@ -13,13 +16,15 @@ abstract class ProfileRepository {
 
   Future<Either<Failure, ProviderProfileModel>> saveProfile({
     int? id,
-    required int categoryId,
+    required List<int> categoryIds,
     required double latitude,
     required double longitude,
     String? title,
     String? bio,
     String? city,
     String? district,
+    int? cityId,
+    int? districtId,
     bool? isActive,
     List<ScheduleSlot> schedules,
   });

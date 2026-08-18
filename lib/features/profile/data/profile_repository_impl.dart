@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:home_service_app/core/error/failures.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
+import 'package:home_service_app/features/profile/data/models/location_models.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 import 'package:home_service_app/features/profile/data/models/schedule_slot.dart';
 import 'package:home_service_app/features/profile/data/profile_remote_data_source.dart';
@@ -16,6 +17,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Either<Failure, List<CategoryModel>>> categories() async {
     try {
       return Right(await _remote.categories());
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<CityModel>>> cities() async {
+    try {
+      return Right(await _remote.cities());
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));
     }
@@ -42,38 +52,44 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, ProviderProfileModel>> saveProfile({
     int? id,
-    required int categoryId,
+    required List<int> categoryIds,
     required double latitude,
     required double longitude,
     String? title,
     String? bio,
     String? city,
     String? district,
+    int? cityId,
+    int? districtId,
     bool? isActive,
     List<ScheduleSlot> schedules = const [],
   }) async {
     try {
       if (id == null) {
         return Right(await _remote.createProfile(
-          categoryId: categoryId,
+          categoryIds: categoryIds,
           latitude: latitude,
           longitude: longitude,
           title: title,
           bio: bio,
           city: city,
           district: district,
+          cityId: cityId,
+          districtId: districtId,
           schedules: schedules,
         ));
       }
       return Right(await _remote.updateProfile(
         id: id,
-        categoryId: categoryId,
+        categoryIds: categoryIds,
         latitude: latitude,
         longitude: longitude,
         title: title,
         bio: bio,
         city: city,
         district: district,
+        cityId: cityId,
+        districtId: districtId,
         isActive: isActive,
         schedules: schedules,
       ));

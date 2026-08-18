@@ -48,12 +48,15 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) {
-          final uri = error.requestOptions.uri;
-          // ignore: avoid_print
-          print(
-            '[API] ${error.requestOptions.method} $uri → '
-            '${error.type.name}: ${error.message}',
-          );
+          final path = error.requestOptions.uri.path;
+          final isLogout = path.endsWith('/auth/logout');
+          if (!(isLogout && error.response?.statusCode == 401)) {
+            // ignore: avoid_print
+            print(
+              '[API] ${error.requestOptions.method} ${error.requestOptions.uri} → '
+              '${error.type.name}: ${error.message}',
+            );
+          }
           handler.next(error);
         },
       ),

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ev və Ailə</string>
+	<string>MySancho</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -51,6 +51,11 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
@@ -70,12 +75,19 @@
 	<string>$(GOOGLE_MAPS_API_KEY)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Audio intro və səsli sorğu üçün mikrofona ehtiyac var.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Verified sənəd yükləmək üçün qalereyaya giriş lazımdır.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Yaxınlıqdakı xidmətləri göstərmək üçün məkan lazımdır.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Yaxınlıqdakı xidmətləri göstərmək üçün məkan lazımdır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Yerli development serverə qoşulmaq üçün lokal şəbəkə lazımdır.</string>
+	<string>Hot reload və lokal API üçün Mac ilə eyni şəbəkədə əlaqə lazımdır.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartVmService._tcp</string>
+		<string>_dartobservatory._tcp</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

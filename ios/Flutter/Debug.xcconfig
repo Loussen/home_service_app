@@ -1,2 +1,6 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+#include? "MapsSecrets.xcconfig"
+
+// Speeds Flutter attach on physical iOS (mDNS / Dart VM Service).
+INFOPLIST_KEY_NSBonjourServices = _dartVmService._tcp _dartobservatory._tcp

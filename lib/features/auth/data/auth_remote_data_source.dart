@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:home_service_app/core/network/api_client.dart';
 import 'package:home_service_app/features/auth/data/models/user_model.dart';
 
@@ -36,7 +37,22 @@ class AuthRemoteDataSource {
     return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
   }
 
+  Future<UserModel> updateProfile({String? name}) async {
+    final res = await _client.dio.patch(
+      '/auth/profile',
+      data: {
+        if (name != null) 'name': name,
+      },
+    );
+    return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
+  }
+
   Future<void> logout() async {
-    await _client.dio.post('/auth/logout');
+    await _client.dio.post(
+      '/auth/logout',
+      options: Options(
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
   }
 }
