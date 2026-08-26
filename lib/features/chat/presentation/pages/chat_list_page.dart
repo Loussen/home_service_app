@@ -34,6 +34,7 @@ class _ChatListViewState extends State<_ChatListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,16 +43,16 @@ class _ChatListViewState extends State<_ChatListView> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: Row(
                 children: [
-                  Text(t('chat.title'), style: Theme.of(context).textTheme.displaySmall),
+                  Text(t('chat.title'), style: Theme.of(context).textTheme.headlineSmall),
                   const Spacer(),
                   Container(
                     width: 40,
                     height: 40,
                     decoration: const BoxDecoration(
-                      color: AppColors.skySoft,
+                      color: AppColors.mist,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.search, color: AppColors.sky),
+                    child: const Icon(Icons.search, color: AppColors.secondary),
                   ),
                 ],
               ),
@@ -211,13 +212,16 @@ class _SegChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.peach : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.primary.withValues(alpha: 0.2) : Colors.transparent,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontWeight: FontWeight.w700,
-            color: selected ? AppColors.primaryDark : AppColors.ink,
+            color: selected ? AppColors.primary : AppColors.muted,
           ),
         ),
       ),

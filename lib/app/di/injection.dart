@@ -112,7 +112,11 @@ Future<void> configureDependencies() async {
     )
     ..registerFactory(() => ProfileListCubit(getIt()))
     ..registerFactoryParam<ProfileFormCubit, int?, void>(
-      (id, _) => ProfileFormCubit(getIt(), profileId: id),
+      (id, _) => ProfileFormCubit(
+        getIt(),
+        getIt<PlacesClient>(),
+        profileId: id,
+      ),
     )
     ..registerLazySingleton<SearchRemoteDataSource>(
       () => SearchRemoteDataSource(getIt<ApiClient>()),

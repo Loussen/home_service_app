@@ -210,10 +210,10 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, bg, fg) = switch (status) {
       'accepted' => (t('offer.status.accepted'), AppColors.skySoft, AppColors.sky),
-      'completed' => (t('offer.status.completed'), const Color(0xFFE8F6EA), AppColors.published),
+      'completed' => (t('offer.status.completed'), AppColors.sageSoft, AppColors.published),
       'declined' => (t('offer.status.declined'), AppColors.peach, AppColors.primary),
       'cancelled' => (t('offer.status.cancelled'), AppColors.peach, AppColors.muted),
-      _ => (t('offer.status.pending'), AppColors.cream, const Color(0xFF8A6A12)),
+      _ => (t('offer.status.pending'), AppColors.parchment, AppColors.primaryDark),
     };
 
     return Container(

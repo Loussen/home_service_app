@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
-import 'package:home_service_app/app/config/app_config.dart';
+import 'package:home_service_app/app/widgets/ms_widgets.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 
 class AuthChrome extends StatelessWidget {
@@ -27,11 +28,19 @@ class AuthChrome extends StatelessWidget {
               24,
               MediaQuery.paddingOf(context).top + 12,
               24,
-              28,
+              32,
             ),
             decoration: const BoxDecoration(
-              color: AppColors.peach,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.parchment,
+                  Color(0xFFE8DFD4),
+                  AppColors.mist,
+                ],
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,20 +52,15 @@ class AuthChrome extends StatelessWidget {
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Icons.arrow_back_rounded),
                   ),
-                Text(
-                  AppConfig.appName,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 36,
-                      ),
-                ),
-                const SizedBox(height: 8),
+                const MsBrandTitle(fontSize: 36),
+                const SizedBox(height: 10),
                 Text(
                   subtitle ?? t('auth.tagline'),
-                  style: const TextStyle(
+                  style: GoogleFonts.dmSans(
                     color: AppColors.ink,
-                    height: 1.35,
+                    height: 1.4,
                     fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -90,16 +94,21 @@ class AuthRoleCard extends StatelessWidget {
     return Material(
       color: color,
       borderRadius: BorderRadius.circular(20),
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.divider.withValues(alpha: 0.6)),
+          ),
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 26,
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.surface,
                 child: Icon(icon, color: AppColors.primary),
               ),
               const SizedBox(width: 14),

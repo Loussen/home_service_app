@@ -77,11 +77,26 @@ class AccountPage extends StatelessWidget {
             : 'U';
 
         return Scaffold(
+          backgroundColor: AppColors.canvas,
           body: SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
               children: [
-                Row(
+                Text(
+                  'MySancho',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.primary,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
                   children: [
                     CircleAvatar(
                       radius: 28,
@@ -106,8 +121,9 @@ class AccountPage extends StatelessWidget {
                     ),
                     _RoundIcon(icon: Icons.photo_camera_outlined, color: AppColors.primary),
                     const SizedBox(width: 8),
-                    _RoundIcon(icon: Icons.notifications_outlined, color: const Color(0xFFE8B923)),
+                    _RoundIcon(icon: Icons.notifications_outlined, color: AppColors.gold),
                   ],
+                ),
                 ),
                 const SizedBox(height: 12),
                 const ProfileCompletenessBanner(
@@ -123,13 +139,13 @@ class AccountPage extends StatelessWidget {
                           color: AppColors.skySoft,
                           icon: Icons.mic_none,
                           title: t('account.card.audio_intro'),
-                          onTap: () => context.go('/profiles'),
+                          onTap: () => context.push('/profiles/new'),
                         ),
                         _PastelCard(
                           color: AppColors.cream,
                           icon: Icons.layers_outlined,
                           title: t('account.card.profiles'),
-                          onTap: () => context.go('/profiles'),
+                          onTap: () => context.push('/profiles/new'),
                         ),
                         _PastelCard(
                           color: AppColors.lavender,
@@ -138,7 +154,7 @@ class AccountPage extends StatelessWidget {
                           onTap: () => context.push('/wallet'),
                         ),
                         _PastelCard(
-                          color: const Color(0xFFE8F6EA),
+                          color: AppColors.sageSoft,
                           icon: Icons.verified_outlined,
                           title: t('account.card.verify'),
                           onTap: () => context.push('/verification'),
@@ -154,7 +170,7 @@ class AccountPage extends StatelessWidget {
                           color: AppColors.cream,
                           icon: Icons.assignment_outlined,
                           title: t('account.card.requests'),
-                          onTap: () => context.go('/profiles'),
+                          onTap: () => context.go('/search'),
                         ),
                         _PastelCard(
                           color: AppColors.lavender,
@@ -166,7 +182,16 @@ class AccountPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
                 _MenuTile(
                   icon: Icons.calendar_month_outlined,
                   label: t('account.menu.bookings'),
@@ -221,6 +246,9 @@ class AccountPage extends StatelessWidget {
                   label: t('account.menu.logout'),
                   onTap: () => context.read<AuthCubit>().logout(),
                 ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -268,13 +296,14 @@ class _PastelCard extends StatelessWidget {
       padding: const EdgeInsets.only(right: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
           width: 140,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,8 +338,8 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: AppColors.sky),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      leading: Icon(icon, color: AppColors.secondary),
       title: Text(label),
       trailing: trailing ??
           const Icon(Icons.chevron_right, color: AppColors.muted),

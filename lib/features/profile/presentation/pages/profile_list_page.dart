@@ -19,6 +19,7 @@ class ProfileListPage extends StatelessWidget {
       create: (_) => getIt<ProfileListCubit>()..load(),
       child: Builder(
         builder: (context) => Scaffold(
+        backgroundColor: AppColors.canvas,
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,7 +29,7 @@ class ProfileListPage extends StatelessWidget {
                 child: Text(
                   t('profiles.title'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppColors.sky,
+                        color: AppColors.primary,
                       ),
                 ),
               ),
@@ -182,8 +183,29 @@ class _ProfileCard extends StatelessWidget {
               _ActionCircle(
                 icon: Icons.arrow_upward,
                 color: AppColors.statusNew,
+                enabled: !profile.bumpActive &&
+                    (context.watch<AuthCubit>().state.user?.canBump ?? true),
                 onTap: () async {
                   final cubit = context.read<ProfileListCubit>();
+                  final user = context.read<AuthCubit>().state.user;
+                  if (profile.bumpActive) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          t('profiles.bump_remaining', params: {
+                            'hours': '${profile.bumpRemainingHours}',
+                          }),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  if (!(user?.canBump ?? true)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(t('profiles.bump_limit'))),
+                    );
+                    return;
+                  }
                   final balance = await cubit.bump(profile.id);
                   if (balance != null && context.mounted) {
                     context.read<AuthCubit>().bootstrap();
@@ -281,6 +303,24 @@ class _ProfileCard extends StatelessWidget {
               ],
             ),
           ],
+          if (profile.bumpActive) ...[
+            const SizedBox(height: 10),
+            Chip(
+              label: Text(
+                t('profiles.bump_remaining', params: {
+                  'hours': '${profile.bumpRemainingHours}',
+                }),
+              ),
+              backgroundColor: AppColors.peach,
+              labelStyle: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+              visualDensity: VisualDensity.compact,
+              side: BorderSide.none,
+            ),
+          ],
           if (profile.isVerified || profile.isVip) ...[
             const SizedBox(height: 10),
             Text(
@@ -303,11 +343,13 @@ class _ActionCircle extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.enabled = true,
   });
 
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +358,7 @@ class _ActionCircle extends StatelessWidget {
       customBorder: const CircleBorder(),
       child: CircleAvatar(
         radius: 18,
-        backgroundColor: color,
+        backgroundColor: enabled ? color : AppColors.divider,
         child: Icon(icon, size: 16, color: Colors.white),
       ),
     );

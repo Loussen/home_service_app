@@ -57,7 +57,7 @@ class _ProfileCompletenessBannerState extends State<ProfileCompletenessBanner> {
       context.push('/profiles/${completeness.profileId}');
       return;
     }
-    context.go('/onboarding');
+    context.push('/onboarding');
   }
 
   @override

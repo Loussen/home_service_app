@@ -6,6 +6,7 @@ import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:home_service_app/features/auth/data/models/user_model.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
 import 'package:home_service_app/features/search_ai/data/models/service_request_model.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_cubit.dart';
@@ -34,11 +35,23 @@ class _SearchAiView extends StatefulWidget {
   State<_SearchAiView> createState() => _SearchAiViewState();
 }
 
-class _SearchAiViewState extends State<_SearchAiView> {
+class _SearchAiViewState extends State<_SearchAiView>
+    with SingleTickerProviderStateMixin {
   final _textCtrl = TextEditingController();
+  late final AnimationController _micPulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _micPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+  }
 
   @override
   void dispose() {
+    _micPulse.dispose();
     _textCtrl.dispose();
     super.dispose();
   }
@@ -65,6 +78,22 @@ class _SearchAiViewState extends State<_SearchAiView> {
         final remote = AppRemoteConfig.instance;
         final urgentFee = remote.config.fees.urgent;
         final voiceEnabled = remote.flags.voiceSearch;
+        final urgentQuota = context.watch<AuthCubit>().state.user?.urgentQuota;
+        final canUrgent = urgentQuota?.canUrgent ?? true;
+        final urgentKm =
+            (urgentQuota?.radiusKm ?? remote.config.urgentRadiusKm).toStringAsFixed(0);
+        final urgentHours =
+            '${urgentQuota?.hours ?? remote.config.urgentHours}';
+        final urgentRemaining =
+            '${urgentQuota?.dailyRemaining ?? remote.config.urgentDailyLimit}';
+
+        if (state.isRecording) {
+          if (!_micPulse.isAnimating) _micPulse.repeat(reverse: true);
+        } else if (_micPulse.isAnimating) {
+          _micPulse
+            ..stop()
+            ..value = 0;
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -94,67 +123,100 @@ class _SearchAiViewState extends State<_SearchAiView> {
                     const SizedBox(height: 8),
                     Text(
                       t('search.subtitle'),
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.muted,
+                          ),
                     ),
                     if (voiceEnabled) ...[
-                    const SizedBox(height: 20),
-                    Center(
-                      child: GestureDetector(
-                        onTap: busy ? null : cubit.toggleRecording,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 148,
-                          height: 148,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: state.isRecording
-                                ? Colors.red.shade400
-                                : Theme.of(context).colorScheme.primary,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (state.isRecording
-                                        ? Colors.red
-                                        : Theme.of(context).colorScheme.primary)
-                                    .withValues(alpha: 0.35),
-                                blurRadius: 24,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            state.isRecording ? Icons.stop : Icons.mic,
-                            size: 48,
-                            color: Colors.white,
+                      const SizedBox(height: 28),
+                      Center(
+                        child: GestureDetector(
+                          onTap: busy ? null : cubit.toggleRecording,
+                          child: AnimatedBuilder(
+                            animation: _micPulse,
+                            builder: (context, _) {
+                              final pulse = state.isRecording
+                                  ? 0.35 + (_micPulse.value * 0.35)
+                                  : 0.28;
+                              final ring = state.isRecording
+                                  ? 8.0 + (_micPulse.value * 10)
+                                  : 0.0;
+                              return Container(
+                                width: 156,
+                                height: 156,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (state.isRecording
+                                              ? AppColors.badge
+                                              : AppColors.primary)
+                                          .withValues(alpha: pulse),
+                                      blurRadius: 28 + ring,
+                                      spreadRadius: 2 + ring * 0.3,
+                                    ),
+                                  ],
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: state.isRecording
+                                          ? [
+                                              const Color(0xFFD45A4A),
+                                              AppColors.primaryDark,
+                                            ]
+                                          : [
+                                              AppColors.primary,
+                                              AppColors.primaryDark,
+                                            ],
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.gold.withValues(
+                                        alpha: state.isRecording ? 0.55 : 0.35,
+                                      ),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    state.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                                    size: 52,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Text(
-                        state.isRecording
-                            ? t('search.recording',
-                                params: {'seconds': '${state.recordSeconds}'})
-                            : state.localAudioPath != null
-                                ? t('search.audio_ready')
-                                : t('search.tap_mic'),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            t('search.or_text'),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
+                      const SizedBox(height: 14),
+                      Center(
+                        child: Text(
+                          state.isRecording
+                              ? t('search.recording',
+                                  params: {'seconds': '${state.recordSeconds}'})
+                              : state.localAudioPath != null
+                                  ? t('search.audio_ready')
+                                  : t('search.tap_mic'),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              t('search.or_text'),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
                     ],
                     if (!voiceEnabled) const SizedBox(height: 20),
                     const SizedBox(height: 12),
@@ -188,13 +250,23 @@ class _SearchAiViewState extends State<_SearchAiView> {
                     const SizedBox(height: 12),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
+                      activeThumbColor: AppColors.primary,
                       title: Text(t('search.urgent_title')),
                       subtitle: Text(
-                        t('search.urgent_subtitle',
-                            params: {'fee': urgentFee.toStringAsFixed(0)}),
+                        t(
+                          canUrgent
+                              ? 'search.urgent_subtitle'
+                              : 'search.urgent_limit',
+                          params: {
+                            'fee': urgentFee.toStringAsFixed(0),
+                            'km': urgentKm,
+                            'hours': urgentHours,
+                            'count': urgentRemaining,
+                          },
+                        ),
                       ),
-                      value: state.isUrgent,
-                      onChanged: busy ? null : cubit.setUrgent,
+                      value: canUrgent && state.isUrgent,
+                      onChanged: busy || !canUrgent ? null : cubit.setUrgent,
                     ),
                     const SizedBox(height: 8),
                     SearchLocationField(
@@ -203,6 +275,12 @@ class _SearchAiViewState extends State<_SearchAiView> {
                       address: state.address,
                       enabled: !busy && !state.isRecording,
                       onChanged: cubit.setLocation,
+                    ),
+                    const SizedBox(height: 12),
+                    _SubmitChargeInfo(
+                      user: context.watch<AuthCubit>().state.user,
+                      isUrgent: canUrgent && state.isUrgent,
+                      fallbackUrgentFee: urgentFee,
                     ),
                     const SizedBox(height: 16),
                     if (state.phase == SearchPhase.submitting ||
@@ -218,7 +296,12 @@ class _SearchAiViewState extends State<_SearchAiView> {
                         ),
                       ),
                     ElevatedButton(
-                      onPressed: busy || state.isRecording ? null : cubit.submit,
+                      onPressed: busy || state.isRecording
+                          ? null
+                          : () {
+                              if (!canUrgent) cubit.setUrgent(false);
+                              cubit.submit();
+                            },
                       child: Text(
                         busy ? t('search.submitting') : t('search.submit'),
                       ),
@@ -227,6 +310,60 @@ class _SearchAiViewState extends State<_SearchAiView> {
                 ),
         );
       },
+    );
+  }
+}
+
+class _SubmitChargeInfo extends StatelessWidget {
+  const _SubmitChargeInfo({
+    required this.user,
+    required this.isUrgent,
+    required this.fallbackUrgentFee,
+  });
+
+  final UserModel? user;
+  final bool isUrgent;
+  final double fallbackUrgentFee;
+
+  @override
+  Widget build(BuildContext context) {
+    // Search request itself is free; only urgent adds a charge.
+    const base = 0.0;
+    final urgent = isUrgent
+        ? (user?.urgentQuota?.fee ?? fallbackUrgentFee)
+        : 0.0;
+    final total = base + urgent;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.parchment,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Balansdan çıxılacaq: ${total.toStringAsFixed(2)} AZN',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Axtarış: ${base.toStringAsFixed(2)} AZN'
+            '${isUrgent ? ' + Təcili: ${urgent.toStringAsFixed(2)} AZN' : ''}',
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -301,7 +438,10 @@ class _ResultsBodyState extends State<_ResultsBody> {
       (f) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(f.message)),
       ),
-      (conversation) => context.push('/chat/${conversation.id}'),
+      (conversation) {
+        context.read<AuthCubit>().bootstrap();
+        context.push('/chat/${conversation.id}');
+      },
     );
   }
 
@@ -387,7 +527,7 @@ class _ResultsBodyState extends State<_ResultsBody> {
                 _ResultChip(
                   label: _timeSlotAz('${request.parsedCriteria!['time_slot']}'),
                   background: AppColors.cream,
-                  foreground: const Color(0xFF8A6A12),
+                  foreground: AppColors.primaryDark,
                 ),
               if (request.isUrgent)
                 _ResultChip(
@@ -398,6 +538,17 @@ class _ResultsBodyState extends State<_ResultsBody> {
             ],
           ),
           const SizedBox(height: 12),
+          if (context.watch<AuthCubit>().state.user?.isClient == true)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                t('match.connect_remaining', params: {
+                  'count':
+                      '${context.watch<AuthCubit>().state.user?.connectQuota?.dailyRemaining ?? 0}',
+                }),
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+            ),
           _ResultsHeader(
             request: request,
             matchCount: matches.length,
@@ -484,7 +635,9 @@ class _ResultsHeader extends StatelessWidget {
           ),
         if (!request.isUrgent)
           TextButton.icon(
-            onPressed: onUrgent,
+            onPressed: (context.watch<AuthCubit>().state.user?.canUrgent ?? true)
+                ? onUrgent
+                : null,
             icon: const Icon(Icons.campaign_outlined, size: 18),
             label: Text(t('search.urgent_title')),
           ),
@@ -515,6 +668,11 @@ List<Widget> _searchMetaBanners(
   }
   if (meta['dropped_schedule'] == true) {
     notes.add(t('search.meta.dropped_schedule'));
+  }
+  if (meta['urgent'] == true) {
+    notes.add(t('search.meta.urgent_radius', params: {
+      'km': '${meta['base_radius_km'] ?? meta['radius_km'] ?? 5}',
+    }));
   }
   if (notes.isEmpty) return const [];
 

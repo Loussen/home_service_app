@@ -51,6 +51,9 @@ class UserModel {
     this.status = 'active',
     this.providerProfilesCount = 0,
     this.completeness,
+    this.connectQuota,
+    this.urgentQuota,
+    this.bumpQuota,
   });
 
   final int id;
@@ -62,10 +65,16 @@ class UserModel {
   final String status;
   final int providerProfilesCount;
   final ProfileCompleteness? completeness;
+  final ConnectQuota? connectQuota;
+  final UrgentQuota? urgentQuota;
+  final BumpQuota? bumpQuota;
   bool get isProvider => activeRole == 'provider';
   bool get isClient => activeRole == 'client';
   bool get needsProviderOnboarding =>
       isProvider && providerProfilesCount == 0;
+  bool get canConnect => connectQuota?.canConnect ?? true;
+  bool get canUrgent => urgentQuota?.canUrgent ?? true;
+  bool get canBump => bumpQuota?.canBump ?? true;
 
   ProfileCompleteness get effectiveCompleteness {
     if (!isProvider) {
@@ -80,6 +89,9 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final completenessJson = json['profile_completeness'];
+    final quotaJson = json['connect_quota'];
+    final urgentJson = json['urgent_quota'];
+    final bumpJson = json['bump_quota'];
     return UserModel(
       id: json['id'] as int,
       phone: json['phone'] as String,
@@ -95,6 +107,96 @@ class UserModel {
               Map<String, dynamic>.from(completenessJson),
             )
           : null,
+      connectQuota: quotaJson is Map
+          ? ConnectQuota.fromJson(Map<String, dynamic>.from(quotaJson))
+          : null,
+      urgentQuota: urgentJson is Map
+          ? UrgentQuota.fromJson(Map<String, dynamic>.from(urgentJson))
+          : null,
+      bumpQuota: bumpJson is Map
+          ? BumpQuota.fromJson(Map<String, dynamic>.from(bumpJson))
+          : null,
+    );
+  }
+}
+
+class ConnectQuota {
+  const ConnectQuota({
+    required this.inFreeWindow,
+    required this.dailyRemaining,
+    required this.dailyLimit,
+    required this.canConnect,
+    this.fee = 0,
+  });
+
+  final bool inFreeWindow;
+  final int dailyRemaining;
+  final int dailyLimit;
+  final bool canConnect;
+  final double fee;
+
+  factory ConnectQuota.fromJson(Map<String, dynamic> json) {
+    return ConnectQuota(
+      inFreeWindow: json['in_free_window'] == true,
+      dailyRemaining: (json['daily_remaining'] as num?)?.toInt() ?? 0,
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 10,
+      canConnect: json['can_connect'] != false,
+      fee: parseDouble(json['fee']),
+    );
+  }
+}
+
+class UrgentQuota {
+  const UrgentQuota({
+    required this.dailyRemaining,
+    required this.dailyLimit,
+    required this.canUrgent,
+    this.radiusKm = 5,
+    this.hours = 2,
+    this.fee = 2,
+  });
+
+  final int dailyRemaining;
+  final int dailyLimit;
+  final bool canUrgent;
+  final double radiusKm;
+  final int hours;
+  final double fee;
+
+  factory UrgentQuota.fromJson(Map<String, dynamic> json) {
+    return UrgentQuota(
+      dailyRemaining: (json['daily_remaining'] as num?)?.toInt() ?? 0,
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 3,
+      canUrgent: json['can_urgent'] != false,
+      radiusKm: parseDouble(json['radius_km'], fallback: 5),
+      hours: (json['hours'] as num?)?.toInt() ?? 2,
+      fee: parseDouble(json['fee'], fallback: 2),
+    );
+  }
+}
+
+class BumpQuota {
+  const BumpQuota({
+    required this.dailyRemaining,
+    required this.dailyLimit,
+    required this.canBump,
+    this.hours = 24,
+    this.fee = 1,
+  });
+
+  final int dailyRemaining;
+  final int dailyLimit;
+  final bool canBump;
+  final int hours;
+  final double fee;
+
+  factory BumpQuota.fromJson(Map<String, dynamic> json) {
+    return BumpQuota(
+      dailyRemaining: (json['daily_remaining'] as num?)?.toInt() ?? 0,
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 2,
+      canBump: json['can_bump'] != false,
+      hours: (json['hours'] as num?)?.toInt() ?? 24,
+      fee: parseDouble(json['fee'], fallback: 1),
     );
   }
 }

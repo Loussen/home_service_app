@@ -9,14 +9,14 @@ import 'package:home_service_app/features/profile/domain/profile_repository.dart
 import 'package:home_service_app/features/profile/presentation/cubit/profile_form_state.dart';
 
 class ProfileFormCubit extends Cubit<ProfileFormState> {
-  ProfileFormCubit(this._repo, {int? profileId})
+  ProfileFormCubit(this._repo, this._places, {int? profileId})
       : super(ProfileFormState(
           profileId: profileId,
           schedules: ProfileFormState.emptyMatrix(),
         ));
 
   final ProfileRepository _repo;
-  final _places = PlacesClient();
+  final PlacesClient _places;
 
   Future<void> init() async {
     emit(state.copyWith(loading: true, clearMessage: true));
@@ -198,8 +198,9 @@ class ProfileFormCubit extends Cubit<ProfileFormState> {
   Future<bool> save() async {
     if (state.categoryIds.isEmpty) {
       emit(state.copyWith(
-        message: t('category.min_one',
-            params: {'max': '${AppRemoteConfig.instance.config.maxCategoryTags}'}),
+        message: t('category.min_one', params: {
+          'max': '${AppRemoteConfig.instance.config.maxCategoryTags}'
+        }),
       ));
       return false;
     }

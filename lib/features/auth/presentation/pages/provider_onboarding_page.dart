@@ -102,7 +102,11 @@ class _OnboardingViewState extends State<_OnboardingView> {
 
   void _back() {
     if (_step == 0) {
-      context.go('/search');
+      if (Navigator.of(context).canPop()) {
+        context.pop();
+      } else {
+        context.go('/search');
+      }
       return;
     }
     setState(() => _step--);
@@ -124,9 +128,20 @@ class _OnboardingViewState extends State<_OnboardingView> {
       },
       builder: (context, form) {
         final cubit = context.read<ProfileFormCubit>();
-        return Scaffold(
-          body: SafeArea(
-            child: Column(
+        return WillPopScope(
+          onWillPop: () async {
+            if (_step > 0) {
+              _back();
+              return false;
+            }
+            if (Navigator.of(context).canPop()) return true;
+            context.go('/search');
+            return false;
+          },
+          child: Scaffold(
+            backgroundColor: AppColors.canvas,
+            body: SafeArea(
+              child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
@@ -228,6 +243,7 @@ class _OnboardingViewState extends State<_OnboardingView> {
                   ),
                 ),
               ],
+              ),
             ),
           ),
         );

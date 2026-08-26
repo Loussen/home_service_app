@@ -145,7 +145,7 @@ class _BookingCard extends StatelessWidget {
     final (statusLabel, bg, fg) = switch (booking.status) {
       'completed' => (
           t('bookings.status.completed'),
-          const Color(0xFFE8F6EA),
+          AppColors.sageSoft,
           AppColors.published,
         ),
       'cancelled' => (

@@ -3,12 +3,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/app/config/app_theme.dart';
 import 'package:home_service_app/app/config/router.dart';
 import 'package:home_service_app/core/push/push_service.dart';
 import 'package:home_service_app/core/remote/app_locale_notifier.dart';
 import 'package:home_service_app/core/remote/app_locale_service.dart';
+import 'package:home_service_app/core/remote/locale_rebuild.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/app/observers/app_bloc_observer.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
@@ -60,10 +62,24 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
             routerConfig: appRouter,
+            builder: (context, child) {
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: LocaleRebuild(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
             locale: Locale(localeCode),
             supportedLocales: supported.isNotEmpty
                 ? supported
                 : const [Locale('az'), Locale('en'), Locale('ru')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
           );
         },
       ),

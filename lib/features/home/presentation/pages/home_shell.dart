@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:home_service_app/app/config/app_colors.dart';
+import 'package:home_service_app/app/widgets/ms_widgets.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
 
@@ -10,8 +12,9 @@ class HomeShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('MySancho'),
+        title: const MsBrandTitle(fontSize: 22),
         actions: [
           IconButton(
             onPressed: () => context.push('/wallet'),
@@ -29,7 +32,7 @@ class HomeShell extends StatelessWidget {
           final isProvider = user?.activeRole == 'provider';
 
           return ListView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             children: [
               Text(
                 user?.name?.isNotEmpty == true
@@ -40,42 +43,50 @@ class HomeShell extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Rol: ${user?.activeRole ?? '-'} · Balans: ${user?.balance.toStringAsFixed(2) ?? '0'} AZN',
+                style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 24),
               if (isProvider)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.work_outline),
-                    title: const Text('Xidmət profilləri'),
-                    subtitle: const Text('Cədvəl, audio intro, multi-profil'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/profiles'),
+                MsCard(
+                  onTap: () => context.push('/profiles'),
+                  child: const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.work_outline, color: AppColors.primary),
+                    title: Text('Xidmət profilləri'),
+                    subtitle: Text('Cədvəl, audio intro, multi-profil'),
+                    trailing: Icon(Icons.chevron_right, color: AppColors.muted),
                   ),
                 )
               else
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.mic),
-                    title: const Text('AI səsli sorğu'),
-                    subtitle: const Text('Danışın — match + xəritə'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/search'),
+                MsCard(
+                  onTap: () => context.push('/search'),
+                  child: const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.mic, color: AppColors.primary),
+                    title: Text('AI səsli sorğu'),
+                    subtitle: Text('Danışın — match + xəritə'),
+                    trailing: Icon(Icons.chevron_right, color: AppColors.muted),
                   ),
                 ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.map_outlined),
-                  title: const Text('Xəritədə axtar'),
-                  subtitle: const Text('Eyni AI match axını'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/search'),
+              const SizedBox(height: 12),
+              MsCard(
+                onTap: () => context.push('/search'),
+                child: const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.map_outlined, color: AppColors.secondary),
+                  title: Text('Xəritədə axtar'),
+                  subtitle: Text('Eyni AI match axını'),
+                  trailing: Icon(Icons.chevron_right, color: AppColors.muted),
                 ),
               ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text('Rol dəyiş'),
-                  onTap: () => context.push('/role'),
+              const SizedBox(height: 12),
+              MsCard(
+                onTap: () => context.push('/role'),
+                child: const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.person_outline, color: AppColors.secondary),
+                  title: Text('Rol dəyiş'),
+                  trailing: Icon(Icons.chevron_right, color: AppColors.muted),
                 ),
               ),
             ],

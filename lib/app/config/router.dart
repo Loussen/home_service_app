@@ -1,3 +1,6 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_config.dart';
@@ -46,25 +49,44 @@ final GoRouter appRouter = GoRouter(
   },
   routes: [
     GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-    GoRoute(path: '/otp', builder: (_, __) => const OtpPage()),
-    GoRoute(path: '/role', builder: (_, __) => const RolePage()),
+    GoRoute(
+      path: '/otp',
+      pageBuilder: (_, state) => _adaptivePage(state, const OtpPage()),
+    ),
+    GoRoute(
+      path: '/role',
+      pageBuilder: (_, state) => _adaptivePage(state, const RolePage()),
+    ),
     GoRoute(
       path: '/onboarding',
-      builder: (_, __) => const ProviderOnboardingPage(),
+      pageBuilder: (_, state) =>
+          _adaptivePage(state, const ProviderOnboardingPage()),
     ),
-    GoRoute(path: '/wallet', builder: (_, __) => const WalletPage()),
-    GoRoute(path: '/reviews', builder: (_, __) => const ReviewsPage()),
-    GoRoute(path: '/verification', builder: (_, __) => const VerificationPage()),
-    GoRoute(path: '/bookings', builder: (_, __) => const BookingsPage()),
+    GoRoute(
+      path: '/wallet',
+      pageBuilder: (_, state) => _adaptivePage(state, const WalletPage()),
+    ),
+    GoRoute(
+      path: '/reviews',
+      pageBuilder: (_, state) => _adaptivePage(state, const ReviewsPage()),
+    ),
+    GoRoute(
+      path: '/verification',
+      pageBuilder: (_, state) => _adaptivePage(state, const VerificationPage()),
+    ),
+    GoRoute(
+      path: '/bookings',
+      pageBuilder: (_, state) => _adaptivePage(state, const BookingsPage()),
+    ),
     GoRoute(
       path: '/profiles/new',
-      builder: (_, __) => const ProfileFormPage(),
+      pageBuilder: (_, state) => _adaptivePage(state, const ProfileFormPage()),
     ),
     GoRoute(
       path: '/profiles/:id',
-      builder: (_, state) {
+      pageBuilder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '');
-        return ProfileFormPage(profileId: id);
+        return _adaptivePage(state, ProfileFormPage(profileId: id));
       },
     ),
     StatefulShellRoute.indexedStack(
@@ -92,9 +114,12 @@ final GoRouter appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: ':id',
-                  builder: (_, state) {
+                  pageBuilder: (_, state) {
                     final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-                    return ChatThreadPage(conversationId: id);
+                    return _adaptivePage(
+                      state,
+                      ChatThreadPage(conversationId: id),
+                    );
                   },
                 ),
               ],
@@ -110,3 +135,10 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+Page<dynamic> _adaptivePage(GoRouterState state, Widget child) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return CupertinoPage<void>(key: state.pageKey, child: child);
+  }
+  return MaterialPage<void>(key: state.pageKey, child: child);
+}

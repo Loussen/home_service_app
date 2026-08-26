@@ -133,7 +133,7 @@ class _StatusCard extends StatelessWidget {
     final (label, bg, fg) = switch (document.status) {
       'approved' => (
           t('verify.status.approved'),
-          const Color(0xFFE8F6EA),
+          AppColors.sageSoft,
           AppColors.published,
         ),
       'rejected' => (

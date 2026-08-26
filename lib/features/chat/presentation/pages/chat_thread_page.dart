@@ -233,32 +233,63 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                               ),
                             );
                           }
-                          final mine = msg.senderId == myId;
-                          return Align(
-                            alignment: mine
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.75,
-                              ),
-                              decoration: BoxDecoration(
-                                color: mine ? AppColors.primary : AppColors.peach,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                msg.body ?? '',
-                                style: TextStyle(
-                                  color: mine ? Colors.white : AppColors.ink,
-                                  height: 1.3,
+                          final mine = myId != null && msg.senderId == myId;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              mainAxisAlignment: mine
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              children: [
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                        0.75,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: mine
+                                          ? AppColors.primary
+                                          : AppColors.surface,
+                                      border: mine
+                                          ? null
+                                          : Border.all(color: AppColors.divider),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(18),
+                                        topRight: const Radius.circular(18),
+                                        bottomLeft: Radius.circular(
+                                          mine ? 18 : 4,
+                                        ),
+                                        bottomRight: Radius.circular(
+                                          mine ? 4 : 18,
+                                        ),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.ink
+                                              .withValues(alpha: 0.04),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      msg.body ?? '',
+                                      style: TextStyle(
+                                        color: mine
+                                            ? Colors.white
+                                            : AppColors.ink,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           );
                         },

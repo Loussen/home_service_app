@@ -14,7 +14,7 @@ class RolePage extends StatelessWidget {
     if (!context.mounted) return;
     final user = context.read<AuthCubit>().state.user;
     if (role == 'provider' && (user?.needsProviderOnboarding ?? true)) {
-      context.go('/onboarding');
+      context.push('/onboarding');
       return;
     }
     context.go('/search');
@@ -23,6 +23,7 @@ class RolePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuthChrome(
+      showBack: true,
       subtitle: t('role.subtitle'),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),

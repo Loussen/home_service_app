@@ -29,6 +29,8 @@ class ProviderProfileModel {
     this.quietHoursEnd,
     this.schedules = const [],
     this.userName,
+    this.bumpActive = false,
+    this.bumpRemainingHours = 0,
   });
 
   final int id;
@@ -56,6 +58,8 @@ class ProviderProfileModel {
   final String? quietHoursEnd;
   final List<ScheduleSlot> schedules;
   final String? userName;
+  final bool bumpActive;
+  final int bumpRemainingHours;
 
   List<int> get categoryIds {
     if (categories.isNotEmpty) {
@@ -108,6 +112,8 @@ class ProviderProfileModel {
       quietHoursStart: json['quiet_hours_start'] as String?,
       quietHoursEnd: json['quiet_hours_end'] as String?,
       userName: json['user_name'] as String?,
+      bumpActive: json['bump_active'] == true,
+      bumpRemainingHours: (json['bump_remaining_hours'] as num?)?.toInt() ?? 0,
       schedules: schedulesJson
           .map((e) => ScheduleSlot.fromJson(e as Map<String, dynamic>))
           .toList(),

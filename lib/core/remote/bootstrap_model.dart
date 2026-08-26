@@ -49,6 +49,12 @@ class BootstrapConfig {
     this.maxCategoryTags = 3,
     this.fees = const BootstrapFees(),
     this.searchRadiusKm = 50,
+    this.urgentRadiusKm = 5,
+    this.urgentDailyLimit = 3,
+    this.urgentHours = 2,
+    this.bumpHours = 24,
+    this.bumpDailyLimit = 2,
+    this.walletPackages = const [10, 30, 50],
     this.onboardingSteps = const [],
   });
 
@@ -68,6 +74,12 @@ class BootstrapConfig {
         json['fees'] is Map ? Map<String, dynamic>.from(json['fees'] as Map) : null,
       ),
       searchRadiusKm: (json['search_radius_km'] as num?)?.toDouble() ?? 50,
+      urgentRadiusKm: (json['urgent_radius_km'] as num?)?.toDouble() ?? 5,
+      urgentDailyLimit: (json['urgent_daily_limit'] as num?)?.toInt() ?? 3,
+      urgentHours: (json['urgent_hours'] as num?)?.toInt() ?? 2,
+      bumpHours: (json['bump_hours'] as num?)?.toInt() ?? 24,
+      bumpDailyLimit: (json['bump_daily_limit'] as num?)?.toInt() ?? 2,
+      walletPackages: _numList(json['wallet_packages'], const [10, 30, 50]),
       onboardingSteps: steps,
     );
   }
@@ -75,7 +87,22 @@ class BootstrapConfig {
   final int maxCategoryTags;
   final BootstrapFees fees;
   final double searchRadiusKm;
+  final double urgentRadiusKm;
+  final int urgentDailyLimit;
+  final int urgentHours;
+  final int bumpHours;
+  final int bumpDailyLimit;
+  final List<double> walletPackages;
   final List<BootstrapStep> onboardingSteps;
+
+  static List<double> _numList(dynamic raw, List<double> fallback) {
+    if (raw is! List) return fallback;
+    final parsed = raw
+        .map((e) => e is num ? e.toDouble() : double.tryParse('$e'))
+        .whereType<double>()
+        .toList();
+    return parsed.isEmpty ? fallback : parsed;
+  }
 }
 
 class BootstrapFlags {
@@ -179,6 +206,12 @@ class BootstrapPayload {
             'verified': config.fees.verified,
           },
           'search_radius_km': config.searchRadiusKm,
+          'urgent_radius_km': config.urgentRadiusKm,
+          'urgent_daily_limit': config.urgentDailyLimit,
+          'urgent_hours': config.urgentHours,
+          'bump_hours': config.bumpHours,
+          'bump_daily_limit': config.bumpDailyLimit,
+          'wallet_packages': config.walletPackages,
           'onboarding_steps': config.onboardingSteps
               .map((s) => {'id': s.id, 'title': s.title})
               .toList(),
