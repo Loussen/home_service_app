@@ -65,7 +65,9 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(getIt(), getIt()),
     )
-    ..registerFactory(() => AuthCubit(getIt(), getIt<PushService>()))
+    ..registerFactory(
+      () => AuthCubit(getIt(), getIt<PushService>(), getIt<ApiClient>()),
+    )
     ..registerLazySingleton<ChatRemoteDataSource>(
       () => ChatRemoteDataSource(getIt<ApiClient>()),
     )

@@ -18,6 +18,9 @@ class AuthRepositoryImpl implements AuthRepository {
       await _remote.sendOtp(phone);
       return const Right(unit);
     } on DioException catch (e) {
+      if (_isBlocked(e)) {
+        return Left(AccountBlockedFailure(_message(e)));
+      }
       return Left(ServerFailure(_message(e)));
     }
   }
@@ -32,6 +35,9 @@ class AuthRepositoryImpl implements AuthRepository {
       await _tokens.saveToken(result.token);
       return Right((user: result.user, isNew: result.isNew));
     } on DioException catch (e) {
+      if (_isBlocked(e)) {
+        return Left(AccountBlockedFailure(_message(e)));
+      }
       return Left(ServerFailure(_message(e)));
     }
   }
@@ -44,9 +50,19 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Left(CacheFailure('No token'));
       }
       final user = await _remote.me();
+      if (user.isBlocked) {
+        await _tokens.clear();
+        return Left(AccountBlockedFailure(
+          user.profileStatusLabel ??
+              'Sizin profiliniz admin tərəfindən bloklanıb.',
+        ));
+      }
       return Right(user);
     } on DioException catch (e) {
       await _tokens.clear();
+      if (_isBlocked(e)) {
+        return Left(AccountBlockedFailure(_message(e)));
+      }
       return Left(ServerFailure(_message(e)));
     }
   }
@@ -80,12 +96,28 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, UserModel>> resubmitProviderReview() async {
+    try {
+      return Right(await _remote.resubmitProviderReview());
+    } on DioException catch (e) {
+      return Left(ServerFailure(_message(e)));
+    }
+  }
+
+  @override
   Future<Either<Failure, Unit>> logout() async {
     try {
       await _remote.logout();
     } catch (_) {}
     await _tokens.clear();
     return const Right(unit);
+  }
+
+  bool _isBlocked(DioException e) {
+    final data = e.response?.data;
+    if (data is Map && data['code'] == 'ACCOUNT_BLOCKED') return true;
+    final msg = _message(e).toLowerCase();
+    return msg.contains('bloklanıb') || msg.contains('bloklanib');
   }
 
   String _message(DioException e) {

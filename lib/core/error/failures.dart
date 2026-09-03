@@ -14,3 +14,9 @@ class NetworkFailure extends Failure {
 class CacheFailure extends Failure {
   const CacheFailure([super.message = 'Cache error']);
 }
+
+class AccountBlockedFailure extends Failure {
+  const AccountBlockedFailure([
+    super.message = 'Sizin profiliniz admin tərəfindən bloklanıb.',
+  ]);
+}

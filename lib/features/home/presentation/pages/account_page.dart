@@ -6,6 +6,7 @@ import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/core/remote/app_locale_service.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/remote/change_app_locale.dart';
+import 'package:home_service_app/features/auth/data/models/user_model.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
@@ -13,6 +14,109 @@ import 'package:image_picker/image_picker.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
+
+  Future<void> _showRejectionSheet(BuildContext context, UserModel user) async {
+    final note = (user.providerRejectionNote?.trim().isNotEmpty == true)
+        ? user.providerRejectionNote!
+        : t('provider.approval.rejected');
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t('provider.approval.rejected_title'),
+                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  t('provider.approval.reject_reason_label'),
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.parchment,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Text(note, style: const TextStyle(height: 1.4)),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  t('provider.approval.resubmit_hint'),
+                  style: const TextStyle(color: AppColors.muted, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push('/profiles/new');
+                    },
+                    child: Text(t('provider.approval.complete_profile')),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final ok = await context
+                          .read<AuthCubit>()
+                          .resubmitProviderReview();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok
+                                ? t('provider.approval.resubmit_done')
+                                : (context.read<AuthCubit>().state.message ??
+                                    t('error.generic')),
+                          ),
+                        ),
+                      );
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(t('provider.approval.resubmit')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _pickLanguage(BuildContext context) async {
     final service = getIt<AppLocaleService>();
@@ -276,6 +380,27 @@ class AccountPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     children: [
+                      if (user?.isProvider == true)
+                        _MenuTile(
+                          icon: Icons.shield_outlined,
+                          label: t('account.menu.profile_status'),
+                          trailing: Text(
+                            user!.displayProfileStatus,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: user.isBlocked ||
+                                      user.profileStatus == 'blocked' ||
+                                      user.isProviderRejected
+                                  ? AppColors.primary
+                                  : user.providerApprovalStatus == 'approved'
+                                      ? AppColors.published
+                                      : AppColors.secondary,
+                            ),
+                          ),
+                          onTap: user.isProviderRejected
+                              ? () => _showRejectionSheet(context, user)
+                              : () {},
+                        ),
                       _MenuTile(
                         icon: Icons.calendar_month_outlined,
                         label: t('account.menu.bookings'),

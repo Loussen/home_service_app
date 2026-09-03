@@ -77,7 +77,9 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 20),
             BlocConsumer<AuthCubit, AuthState>(
               listener: (context, state) {
-                if (state.message != null && state.message!.isNotEmpty) {
+                if (state.message != null &&
+                    state.message!.isNotEmpty &&
+                    !state.accountBlocked) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(state.message!)),
                   );

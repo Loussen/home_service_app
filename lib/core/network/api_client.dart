@@ -5,6 +5,8 @@ import 'package:dio/io.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/core/network/token_storage.dart';
 
+typedef AccountBlockedHandler = void Function(String message);
+
 class ApiClient {
   ApiClient(this._tokenStorage) {
     // ignore: avoid_print
@@ -58,6 +60,17 @@ class ApiClient {
               '${error.type.name}: ${error.message}',
             );
           }
+
+          final data = error.response?.data;
+          if (error.response?.statusCode == 403 &&
+              data is Map &&
+              data['code'] == 'ACCOUNT_BLOCKED') {
+            final msg = data['message'] is String
+                ? data['message'] as String
+                : 'Sizin profiliniz admin tərəfindən bloklanıb.';
+            onAccountBlocked?.call(msg);
+          }
+
           handler.next(error);
         },
       ),
@@ -66,6 +79,9 @@ class ApiClient {
 
   final TokenStorage _tokenStorage;
   late final Dio _dio;
+
+  /// Wired from [AuthCubit] to alert + logout when admin blocks the account.
+  AccountBlockedHandler? onAccountBlocked;
 
   Dio get dio => _dio;
 }

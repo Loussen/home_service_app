@@ -239,6 +239,7 @@ class AppRemoteConfig {
     'account.card.chats': 'Söhbətlər',
     'account.card.verify': 'Verified sənəd',
     'account.menu.verify': 'Verified sənəd',
+    'account.menu.profile_status': 'Profil statusu',
     'account.menu.wallet': 'Pul kisəsi · {balance} AZN',
     'account.menu.reviews': 'Rəylər',
     'account.menu.favorites': 'Seçilmişlər',
@@ -267,6 +268,13 @@ class AppRemoteConfig {
         'Hesabınız rədd edilib. Dəstəklə əlaqə saxlayın və ya profili tamamlayın.',
     'provider.approval.complete_profile': 'Profili tamamla',
     'provider.approval.refresh': 'Statusu yenilə',
+    'provider.approval.view_reason': 'Rədd səbəbinə bax',
+    'provider.approval.reject_reason_label': 'Admin rədd səbəbi',
+    'provider.approval.resubmit_hint':
+        'Profil və kateqoriyaları düzəldib yenidən baxışa göndərə bilərsiniz.',
+    'provider.approval.resubmit': 'Yenidən baxışa göndər',
+    'provider.approval.resubmit_done':
+        'Yenidən baxışa göndərildi. Admin təsdiqini gözləyin.',
     'account.upload_photo': 'Şəkil yüklə',
     'account.photo_updated': 'Şəkil yeniləndi',
     'profiles.title': 'Profillərim',

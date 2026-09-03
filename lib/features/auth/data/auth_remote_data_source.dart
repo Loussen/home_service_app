@@ -55,6 +55,11 @@ class AuthRemoteDataSource {
     return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
   }
 
+  Future<UserModel> resubmitProviderReview() async {
+    final res = await _client.dio.post('/auth/provider/resubmit-review');
+    return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
+  }
+
   Future<void> logout() async {
     await _client.dio.post(
       '/auth/logout',

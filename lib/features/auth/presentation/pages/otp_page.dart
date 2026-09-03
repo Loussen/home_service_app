@@ -82,7 +82,7 @@ class _OtpPageState extends State<OtpPage> {
                 if (state.status == AuthStatus.authenticated) {
                   _goNext(state);
                 }
-                if (state.message != null) {
+                if (state.message != null && !state.accountBlocked) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(state.message!)),
                   );

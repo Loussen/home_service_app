@@ -11,6 +11,7 @@ class AuthState extends Equatable {
     this.message,
     this.loading = false,
     this.isNewUser = false,
+    this.accountBlocked = false,
   });
 
   final AuthStatus status;
@@ -19,6 +20,7 @@ class AuthState extends Equatable {
   final String? message;
   final bool loading;
   final bool isNewUser;
+  final bool accountBlocked;
 
   AuthState copyWith({
     AuthStatus? status,
@@ -27,6 +29,7 @@ class AuthState extends Equatable {
     String? message,
     bool? loading,
     bool? isNewUser,
+    bool? accountBlocked,
     bool clearMessage = false,
   }) {
     return AuthState(
@@ -36,10 +39,18 @@ class AuthState extends Equatable {
       message: clearMessage ? null : (message ?? this.message),
       loading: loading ?? this.loading,
       isNewUser: isNewUser ?? this.isNewUser,
+      accountBlocked: accountBlocked ?? this.accountBlocked,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [status, user, pendingPhone, message, loading, isNewUser];
+  List<Object?> get props => [
+        status,
+        user,
+        pendingPhone,
+        message,
+        loading,
+        isNewUser,
+        accountBlocked,
+      ];
 }

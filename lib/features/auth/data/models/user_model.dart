@@ -50,6 +50,9 @@ class UserModel {
     this.name,
     this.avatarUrl,
     this.status = 'active',
+    this.isBlocked = false,
+    this.profileStatus,
+    this.profileStatusLabel,
     this.providerProfilesCount = 0,
     this.completeness,
     this.connectQuota,
@@ -69,6 +72,9 @@ class UserModel {
   final String activeRole;
   final double balance;
   final String status;
+  final bool isBlocked;
+  final String? profileStatus;
+  final String? profileStatusLabel;
   final int providerProfilesCount;
   final ProfileCompleteness? completeness;
   final ConnectQuota? connectQuota;
@@ -91,6 +97,21 @@ class UserModel {
   bool get canUrgent => urgentQuota?.canUrgent ?? true;
   bool get canBump => bumpQuota?.canBump ?? true;
 
+  String get displayProfileStatus {
+    if (isBlocked || status == 'blocked' || profileStatus == 'blocked') {
+      return profileStatusLabel ?? 'Bloklanıb';
+    }
+    if (profileStatusLabel != null && profileStatusLabel!.isNotEmpty) {
+      return profileStatusLabel!;
+    }
+    return switch (providerApprovalStatus) {
+      'approved' => 'Təsdiqli',
+      'rejected' => 'Rədd edilib',
+      'pending' => 'Gözləyir',
+      _ => '—',
+    };
+  }
+
   ProfileCompleteness get effectiveCompleteness {
     if (!isProvider) {
       return const ProfileCompleteness(complete: true, percent: 100);
@@ -107,6 +128,7 @@ class UserModel {
     final quotaJson = json['connect_quota'];
     final urgentJson = json['urgent_quota'];
     final bumpJson = json['bump_quota'];
+    final status = json['status'] as String? ?? 'active';
     return UserModel(
       id: json['id'] as int,
       phone: json['phone'] as String,
@@ -114,7 +136,10 @@ class UserModel {
       avatarUrl: json['avatar_url'] as String?,
       activeRole: json['active_role'] as String? ?? 'client',
       balance: parseDouble(json['balance']),
-      status: json['status'] as String? ?? 'active',
+      status: status,
+      isBlocked: json['is_blocked'] == true || status == 'blocked',
+      profileStatus: json['profile_status'] as String?,
+      profileStatusLabel: json['profile_status_label'] as String?,
       providerProfilesCount:
           (json['provider_profiles_count'] as num?)?.toInt() ?? 0,
       completeness: completenessJson is Map
