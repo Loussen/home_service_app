@@ -84,7 +84,7 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _elapsed += const Duration(seconds: 1));
-      if (_elapsed.inSeconds >= 60) {
+      if (_elapsed.inSeconds >= 20) {
         _toggleRecord();
       }
     });

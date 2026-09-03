@@ -9,6 +9,7 @@ import 'package:home_service_app/core/remote/change_app_locale.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -61,6 +62,30 @@ class AccountPage extends StatelessWidget {
     );
   }
 
+  Future<void> _uploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+    if (file == null || !context.mounted) return;
+
+    final ok = await context.read<AuthCubit>().uploadAvatar(file.path);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? t('account.photo_updated')
+              : (context.read<AuthCubit>().state.message ??
+                  t('error.generic')),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
@@ -75,6 +100,11 @@ class AccountPage extends StatelessWidget {
         final initials = name.isNotEmpty
             ? name.trim().split(' ').map((p) => p[0]).take(2).join().toUpperCase()
             : 'U';
+        final pending = user?.isProviderPending == true;
+        final rejected = user?.isProviderRejected == true;
+        final approved = user?.isProvider == true &&
+            user?.providerApprovalStatus == 'approved';
+        final showApproval = pending || rejected || approved;
 
         return Scaffold(
           backgroundColor: AppColors.canvas,
@@ -88,6 +118,31 @@ class AccountPage extends StatelessWidget {
                         color: AppColors.primary,
                       ),
                 ),
+                if (showApproval) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: rejected
+                          ? AppColors.primary.withValues(alpha: 0.08)
+                          : approved
+                              ? AppColors.sageSoft
+                              : AppColors.mist,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: Text(
+                      user?.providerApprovalMessage ??
+                          (rejected
+                              ? t('provider.approval.rejected')
+                              : approved
+                                  ? t('provider.approval.approved')
+                                  : t('provider.approval.pending')),
+                      style: const TextStyle(height: 1.4),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -97,33 +152,62 @@ class AccountPage extends StatelessWidget {
                     border: Border.all(color: AppColors.divider),
                   ),
                   child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.peach,
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppColors.peach,
+                        backgroundImage: user?.avatarUrl != null
+                            ? NetworkImage(user!.avatarUrl!)
+                            : null,
+                        child: user?.avatarUrl != null
+                            ? null
+                            : Text(
+                                initials,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name,
+                                style: Theme.of(context).textTheme.titleLarge),
+                            Text(role,
+                                style:
+                                    const TextStyle(color: AppColors.muted)),
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () => _uploadAvatar(context),
+                              child: Text(
+                                t('account.upload_photo'),
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => _uploadAvatar(context),
+                        borderRadius: BorderRadius.circular(20),
+                        child: _RoundIcon(
+                          icon: Icons.photo_camera_outlined,
                           color: AppColors.primary,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(name, style: Theme.of(context).textTheme.titleLarge),
-                          Text(role, style: const TextStyle(color: AppColors.muted)),
-                        ],
-                      ),
-                    ),
-                    _RoundIcon(icon: Icons.photo_camera_outlined, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    _RoundIcon(icon: Icons.notifications_outlined, color: AppColors.gold),
-                  ],
-                ),
+                      const SizedBox(width: 8),
+                      _RoundIcon(
+                          icon: Icons.notifications_outlined,
+                          color: AppColors.gold),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const ProfileCompletenessBanner(
@@ -192,55 +276,56 @@ class AccountPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     children: [
-                _MenuTile(
-                  icon: Icons.calendar_month_outlined,
-                  label: t('account.menu.bookings'),
-                  onTap: () => context.push('/bookings'),
-                ),
-                _MenuTile(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: t('account.menu.wallet', params: {
-                    'balance': user?.balance.toStringAsFixed(2) ?? '0',
-                  }),
-                  onTap: () => context.push('/wallet'),
-                ),
-                if (user?.isProvider == true)
-                  _MenuTile(
-                    icon: Icons.verified_outlined,
-                    label: t('account.menu.verify'),
-                    onTap: () => context.push('/verification'),
-                  ),
-                _MenuTile(
-                  icon: Icons.star_outline,
-                  label: t('account.menu.reviews'),
-                  onTap: () => context.push('/reviews'),
-                ),
-                _MenuTile(
-                  icon: Icons.bookmark_border,
-                  label: t('account.menu.favorites'),
-                  onTap: () {},
-                ),
-                _MenuTile(
-                  icon: Icons.language,
-                  label: t('account.menu.language'),
-                  trailing: Text(
-                    getIt<AppLocaleService>().labelFor(
-                      getIt<AppLocaleService>().locale,
-                    ),
-                    style: const TextStyle(color: AppColors.muted),
-                  ),
-                  onTap: () => _pickLanguage(context),
-                ),
-                _MenuTile(
-                  icon: Icons.settings_outlined,
-                  label: t('account.menu.settings'),
-                  onTap: () {},
-                ),
-                _MenuTile(
-                  icon: Icons.logout,
-                  label: t('account.menu.logout'),
-                  onTap: () => context.read<AuthCubit>().logout(),
-                ),
+                      _MenuTile(
+                        icon: Icons.calendar_month_outlined,
+                        label: t('account.menu.bookings'),
+                        onTap: () => context.push('/bookings'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: t('account.menu.wallet', params: {
+                          'balance':
+                              user?.balance.toStringAsFixed(2) ?? '0',
+                        }),
+                        onTap: () => context.push('/wallet'),
+                      ),
+                      if (user?.isProvider == true)
+                        _MenuTile(
+                          icon: Icons.verified_outlined,
+                          label: t('account.menu.verify'),
+                          onTap: () => context.push('/verification'),
+                        ),
+                      _MenuTile(
+                        icon: Icons.star_outline,
+                        label: t('account.menu.reviews'),
+                        onTap: () => context.push('/reviews'),
+                      ),
+                      _MenuTile(
+                        icon: Icons.bookmark_border,
+                        label: t('account.menu.favorites'),
+                        onTap: () {},
+                      ),
+                      _MenuTile(
+                        icon: Icons.language,
+                        label: t('account.menu.language'),
+                        trailing: Text(
+                          getIt<AppLocaleService>().labelFor(
+                            getIt<AppLocaleService>().locale,
+                          ),
+                          style: const TextStyle(color: AppColors.muted),
+                        ),
+                        onTap: () => _pickLanguage(context),
+                      ),
+                      _MenuTile(
+                        icon: Icons.settings_outlined,
+                        label: t('account.menu.settings'),
+                        onTap: () {},
+                      ),
+                      _MenuTile(
+                        icon: Icons.logout,
+                        label: t('account.menu.logout'),
+                        onTap: () => context.read<AuthCubit>().logout(),
+                      ),
                     ],
                   ),
                 ),
@@ -291,8 +376,8 @@ class _PastelCard extends StatelessWidget {
       padding: const EdgeInsets.only(right: 12),
       child: InkWell(
         onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
           width: 140,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(

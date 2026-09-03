@@ -257,6 +257,18 @@ class AppRemoteConfig {
     'match.reason.bump': 'Önə çıxıb',
     'match.reason.bump_hint':
         'İcraçı profilini ödənişlə müvəqqəti yüksəldib — axtarışda daha görünəndir. Qalan: {hours} saat.',
+    'provider.approval.pending_title': 'Təsdiq gözlənilir',
+    'provider.approval.pending':
+        'Sorğunuz 1 saat ərzində baxılacaq. Təsdiqləndikdən sonra iş sorğuları gələcək.',
+    'provider.approval.approved':
+        'Hesabınız təsdiqləndi. İndi iş sorğuları gələ bilər.',
+    'provider.approval.rejected_title': 'Qeydiyyat rədd edilib',
+    'provider.approval.rejected':
+        'Hesabınız rədd edilib. Dəstəklə əlaqə saxlayın və ya profili tamamlayın.',
+    'provider.approval.complete_profile': 'Profili tamamla',
+    'provider.approval.refresh': 'Statusu yenilə',
+    'account.upload_photo': 'Şəkil yüklə',
+    'account.photo_updated': 'Şəkil yeniləndi',
     'profiles.title': 'Profillərim',
     'profiles.empty': 'Hələ profil yoxdur.\nYeni profil əlavə edin.',
     'profiles.fallback_name': 'Profil',
@@ -406,7 +418,7 @@ class AppRemoteConfig {
     'wallet.transactions': 'Tranzaksiyalar',
     'wallet.empty': 'Hələ tranzaksiya yoxdur',
     'audio.title': 'Audio intro',
-    'audio.hint': 'Qısa səsli tanıtım (maks. 60 san)',
+    'audio.hint': 'Qısa səsli tanıtım (maks. 20 san)',
     'audio.record_stop': 'Dayandır {time}',
     'audio.record': 'Yaz',
     'audio.ready_upload':

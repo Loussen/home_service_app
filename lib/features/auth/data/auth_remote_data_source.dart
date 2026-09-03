@@ -47,6 +47,14 @@ class AuthRemoteDataSource {
     return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
   }
 
+  Future<UserModel> uploadAvatar(String filePath) async {
+    final form = FormData.fromMap({
+      'avatar': await MultipartFile.fromFile(filePath),
+    });
+    final res = await _client.dio.post('/auth/avatar', data: form);
+    return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
+  }
+
   Future<void> logout() async {
     await _client.dio.post(
       '/auth/logout',

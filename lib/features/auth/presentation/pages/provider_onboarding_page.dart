@@ -97,6 +97,11 @@ class _OnboardingViewState extends State<_OnboardingView> {
     if (!mounted || !ok) return;
     await auth.bootstrap();
     if (!mounted) return;
+    final user = auth.state.user;
+    if (user?.isProviderPending == true || user?.isProviderRejected == true) {
+      context.go('/provider-pending');
+      return;
+    }
     context.go('/search');
   }
 
@@ -163,7 +168,15 @@ class _OnboardingViewState extends State<_OnboardingView> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => context.go('/search'),
+                        onPressed: () {
+                          final user = context.read<AuthCubit>().state.user;
+                          if (user?.isProviderPending == true ||
+                              user?.isProviderRejected == true) {
+                            context.go('/provider-pending');
+                            return;
+                          }
+                          context.go('/search');
+                        },
                         child: Text(t('onboarding.skip')),
                       ),
                     ],

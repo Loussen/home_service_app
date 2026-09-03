@@ -24,6 +24,10 @@ class RolePage extends StatelessWidget {
       context.go('/onboarding');
       return;
     }
+    if (user?.isProviderPending == true || user?.isProviderRejected == true) {
+      context.go('/provider-pending');
+      return;
+    }
     context.go('/search');
   }
 

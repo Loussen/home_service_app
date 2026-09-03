@@ -11,5 +11,6 @@ abstract class AuthRepository {
   Future<Either<Failure, UserModel>> bootstrap();
   Future<Either<Failure, UserModel>> setRole(String role);
   Future<Either<Failure, UserModel>> updateProfile({String? name});
+  Future<Either<Failure, UserModel>> uploadAvatar(String filePath);
   Future<Either<Failure, Unit>> logout();
 }

@@ -71,6 +71,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, UserModel>> uploadAvatar(String filePath) async {
+    try {
+      return Right(await _remote.uploadAvatar(filePath));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_message(e)));
+    }
+  }
+
+  @override
   Future<Either<Failure, Unit>> logout() async {
     try {
       await _remote.logout();

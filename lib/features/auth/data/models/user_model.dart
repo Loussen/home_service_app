@@ -56,6 +56,10 @@ class UserModel {
     this.urgentQuota,
     this.bumpQuota,
     this.needsRole = false,
+    this.providerApprovalStatus,
+    this.needsProviderApproval = false,
+    this.providerApprovalMessage,
+    this.providerRejectionNote,
   });
 
   final int id;
@@ -71,10 +75,18 @@ class UserModel {
   final UrgentQuota? urgentQuota;
   final BumpQuota? bumpQuota;
   final bool needsRole;
+  final String? providerApprovalStatus;
+  final bool needsProviderApproval;
+  final String? providerApprovalMessage;
+  final String? providerRejectionNote;
   bool get isProvider => activeRole == 'provider';
   bool get isClient => activeRole == 'client';
   bool get needsProviderOnboarding =>
       isProvider && providerProfilesCount == 0;
+  bool get isProviderPending =>
+      isProvider && (needsProviderApproval || providerApprovalStatus == 'pending');
+  bool get isProviderRejected =>
+      isProvider && providerApprovalStatus == 'rejected';
   bool get canConnect => connectQuota?.canConnect ?? true;
   bool get canUrgent => urgentQuota?.canUrgent ?? true;
   bool get canBump => bumpQuota?.canBump ?? true;
@@ -120,6 +132,10 @@ class UserModel {
           ? BumpQuota.fromJson(Map<String, dynamic>.from(bumpJson))
           : null,
       needsRole: json['needs_role'] == true,
+      providerApprovalStatus: json['provider_approval_status'] as String?,
+      needsProviderApproval: json['needs_provider_approval'] == true,
+      providerApprovalMessage: json['provider_approval_message'] as String?,
+      providerRejectionNote: json['provider_rejection_note'] as String?,
     );
   }
 }

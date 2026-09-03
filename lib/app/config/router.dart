@@ -9,6 +9,7 @@ import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dar
 import 'package:home_service_app/features/auth/presentation/pages/login_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/otp_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/provider_onboarding_page.dart';
+import 'package:home_service_app/features/auth/presentation/pages/provider_pending_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/role_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_thread_page.dart';
@@ -26,6 +27,12 @@ import 'package:home_service_app/features/profile/presentation/pages/provider_pu
 /// Root navigator — full-screen routes (chat thread, etc.) sit above the tab shell.
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
+
+bool _providerAwaitingApproval(AuthState auth) {
+  final user = auth.user;
+  if (user == null || !user.isProvider) return false;
+  return user.isProviderPending || user.isProviderRejected;
+}
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -49,7 +56,24 @@ final GoRouter appRouter = GoRouter(
     if (loc == '/role' || loc == '/login' || loc == '/otp') {
       if (AppConfig.forceOnboarding) return '/onboarding';
       if (auth.user?.needsProviderOnboarding == true) return '/onboarding';
+      if (_providerAwaitingApproval(auth)) return '/provider-pending';
       return '/search';
+    }
+
+    if (auth.user?.needsProviderOnboarding == true && loc != '/onboarding') {
+      return '/onboarding';
+    }
+
+    final awaiting = _providerAwaitingApproval(auth);
+    final allowedWhilePending = loc == '/provider-pending' ||
+        loc == '/account' ||
+        loc == '/onboarding' ||
+        loc.startsWith('/profiles') ||
+        loc == '/wallet' ||
+        loc == '/verification';
+
+    if (awaiting && !allowedWhilePending) {
+      return '/provider-pending';
     }
 
     if (loc.startsWith('/profiles/') && auth.user?.isProvider != true) {
@@ -72,6 +96,11 @@ final GoRouter appRouter = GoRouter(
       path: '/onboarding',
       pageBuilder: (_, state) =>
           _adaptivePage(state, const ProviderOnboardingPage()),
+    ),
+    GoRoute(
+      path: '/provider-pending',
+      pageBuilder: (_, state) =>
+          _adaptivePage(state, const ProviderPendingPage()),
     ),
     GoRoute(
       path: '/wallet',

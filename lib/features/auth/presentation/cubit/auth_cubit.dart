@@ -88,6 +88,21 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  Future<bool> uploadAvatar(String filePath) async {
+    emit(state.copyWith(loading: true, clearMessage: true));
+    final result = await _repo.uploadAvatar(filePath);
+    return result.fold(
+      (f) {
+        emit(state.copyWith(loading: false, message: f.message));
+        return false;
+      },
+      (user) {
+        emit(state.copyWith(loading: false, user: user));
+        return true;
+      },
+    );
+  }
+
   Future<void> logout() async {
     await _push.unregister();
     emit(const AuthState(status: AuthStatus.unauthenticated));
