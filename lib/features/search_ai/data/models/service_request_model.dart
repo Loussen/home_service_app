@@ -83,6 +83,7 @@ class ServiceRequestModel {
     this.isUrgent = false,
     this.address,
     this.matches = const [],
+    this.matchesCount,
     this.createdAt,
   });
 
@@ -97,6 +98,8 @@ class ServiceRequestModel {
   final String? address;
   final String status;
   final List<MatchModel> matches;
+  /// List endpoint may omit `matches` but still send a count.
+  final int? matchesCount;
   final String? createdAt;
 
   bool get isProcessing => status == 'processing';
@@ -128,6 +131,7 @@ class ServiceRequestModel {
       matches: matchesJson
           .map((e) => MatchModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      matchesCount: json['matches_count'] as int?,
       createdAt: json['created_at'] as String?,
     );
   }

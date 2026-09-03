@@ -221,11 +221,6 @@ class AccountPage extends StatelessWidget {
                   onTap: () {},
                 ),
                 _MenuTile(
-                  icon: Icons.swap_horiz,
-                  label: t('account.menu.switch_role'),
-                  onTap: () => context.push('/role'),
-                ),
-                _MenuTile(
                   icon: Icons.language,
                   label: t('account.menu.language'),
                   trailing: Text(

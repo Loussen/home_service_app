@@ -132,8 +132,6 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
   Widget build(BuildContext context) {
     final me = context.watch<AuthCubit>().state.user;
     final myId = me?.id;
-    final isProvider = me?.isProvider == true;
-    final isClient = me?.isClient == true;
 
     return BlocConsumer<ChatThreadCubit, ChatThreadState>(
       listener: (context, state) {
@@ -146,6 +144,14 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
       },
       builder: (context, state) {
         final conv = state.conversation;
+        final isClient =
+            myId != null && conv != null && conv.clientId == myId;
+        final isProviderParty =
+            myId != null && conv != null && conv.providerId == myId;
+        final canSendOffer = me?.isProvider == true &&
+            isProviderParty &&
+            (conv?.canSendOffer ?? false);
+        final isProvider = isProviderParty;
         final title = conv?.otherUser?.displayName ??
             conv?.profileTitle ??
             t('chat.fallback_name');
@@ -170,7 +176,7 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
               ],
             ),
             actions: [
-              if (isProvider)
+              if (canSendOffer)
                 IconButton(
                   tooltip: t('offer.compose_title'),
                   onPressed: state.sending ? null : () => _composeOffer(cubit),

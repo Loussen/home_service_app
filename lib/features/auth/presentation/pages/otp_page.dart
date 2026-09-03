@@ -24,7 +24,7 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   void _goNext(AuthState state) {
-    if (state.isNewUser) {
+    if (state.user?.needsRole == true || state.isNewUser) {
       context.go('/role');
       return;
     }

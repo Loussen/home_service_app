@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
@@ -63,8 +64,7 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                   : _items.isEmpty
                       ? Center(
                           child: Text(
-                            _error ??
-                                t('requests.empty'),
+                            _error ?? t('requests.empty'),
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: AppColors.muted),
                           ),
@@ -78,33 +78,61 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                                 const SizedBox(height: 10),
                             itemBuilder: (context, index) {
                               final r = _items[index];
-                              return Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
+                              final matchCount =
+                                  r.matchesCount ?? r.matches.length;
+                              return Material(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.divider),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      r.transcribedText ??
-                                          t('requests.item_fallback',
-                                              params: {'id': '${r.id}'}),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  onTap: () async {
+                                    await context.push('/requests/${r.id}');
+                                    if (mounted) _load();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border:
+                                          Border.all(color: AppColors.divider),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${r.status} · ${t('requests.matches_count', params: {'count': '${r.matches.length}'})}',
-                                      style: const TextStyle(
-                                        color: AppColors.muted,
-                                        fontSize: 13,
-                                      ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                r.transcribedText ??
+                                                    t('requests.item_fallback',
+                                                        params: {
+                                                          'id': '${r.id}',
+                                                        }),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                '${r.status} · ${t('requests.matches_count', params: {
+                                                      'count': '$matchCount',
+                                                    })}',
+                                                style: const TextStyle(
+                                                  color: AppColors.muted,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: AppColors.muted,
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               );
                             },

@@ -2,9 +2,10 @@
 class AppConfig {
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    // Physical device: use Mac LAN IP + `php artisan serve --host=0.0.0.0`
-    // Simulator / Mac: Valet `https://home-service.test/api/v1` also works.
-    defaultValue: 'https://home-service.test/api/v1',
+    // Production (mysancho.com). Local override:
+    // flutter run --dart-define=API_BASE_URL=https://home-service.test/api/v1
+    //   or --dart-define-from-file=dart_defines.json
+    defaultValue: 'https://mysancho.com/api/v1',
   );
 
   /// Google Maps API key (Maps SDK for iOS / Android).

@@ -50,6 +50,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<Either<Failure, ProviderProfileModel>> getPublicProfile(int id) async {
+    try {
+      return Right(await _remote.getPublicProfile(id));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
   Future<Either<Failure, ProviderProfileModel>> saveProfile({
     int? id,
     required List<int> categoryIds,

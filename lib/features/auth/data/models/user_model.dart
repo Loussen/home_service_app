@@ -1,3 +1,4 @@
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
 
 class ProfileCompleteness {
@@ -54,6 +55,7 @@ class UserModel {
     this.connectQuota,
     this.urgentQuota,
     this.bumpQuota,
+    this.needsRole = false,
   });
 
   final int id;
@@ -68,6 +70,7 @@ class UserModel {
   final ConnectQuota? connectQuota;
   final UrgentQuota? urgentQuota;
   final BumpQuota? bumpQuota;
+  final bool needsRole;
   bool get isProvider => activeRole == 'provider';
   bool get isClient => activeRole == 'client';
   bool get needsProviderOnboarding =>
@@ -116,6 +119,7 @@ class UserModel {
       bumpQuota: bumpJson is Map
           ? BumpQuota.fromJson(Map<String, dynamic>.from(bumpJson))
           : null,
+      needsRole: json['needs_role'] == true,
     );
   }
 }
@@ -126,6 +130,9 @@ class ConnectQuota {
     required this.dailyRemaining,
     required this.dailyLimit,
     required this.canConnect,
+    this.freeQuota = 5,
+    this.freeUsed = 0,
+    this.freeRemaining = 0,
     this.fee = 0,
   });
 
@@ -133,16 +140,47 @@ class ConnectQuota {
   final int dailyRemaining;
   final int dailyLimit;
   final bool canConnect;
+  final int freeQuota;
+  final int freeUsed;
+  final int freeRemaining;
   final double fee;
 
   factory ConnectQuota.fromJson(Map<String, dynamic> json) {
+    final freeQuota = (json['free_quota'] as num?)?.toInt() ?? 5;
+    final freeUsed = (json['free_used'] as num?)?.toInt() ?? 0;
+    final freeRemaining = (json['free_remaining'] as num?)?.toInt() ??
+        (freeQuota - freeUsed).clamp(0, freeQuota);
     return ConnectQuota(
       inFreeWindow: json['in_free_window'] == true,
       dailyRemaining: (json['daily_remaining'] as num?)?.toInt() ?? 0,
       dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 10,
       canConnect: json['can_connect'] != false,
+      freeQuota: freeQuota,
+      freeUsed: freeUsed,
+      freeRemaining: freeRemaining,
       fee: parseDouble(json['fee']),
     );
+  }
+
+  String hintLabel() {
+    final daily = '$dailyRemaining';
+    if (inFreeWindow) {
+      if (freeRemaining > 0) {
+        return t('match.connect_free', params: {
+          'left': '$freeRemaining',
+          'quota': '$freeQuota',
+          'count': daily,
+        });
+      }
+      return t('match.connect_free_open', params: {'count': daily});
+    }
+    final feeText = fee == fee.roundToDouble()
+        ? fee.toStringAsFixed(0)
+        : fee.toStringAsFixed(1);
+    return t('match.connect_paid', params: {
+      'fee': feeText,
+      'count': daily,
+    });
   }
 }
 

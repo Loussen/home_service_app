@@ -108,7 +108,7 @@ class _SearchAiViewState extends State<_SearchAiView>
             ],
           ),
           body: state.phase == SearchPhase.results && state.request != null
-              ? _ResultsBody(
+              ? RequestResultsBody(
                   state: state,
                   onUrgent: cubit.markUrgent,
                   onRefresh: () => cubit.refreshRequest(state.request!.id),
@@ -368,8 +368,8 @@ class _SubmitChargeInfo extends StatelessWidget {
   }
 }
 
-class _ResultsBody extends StatefulWidget {
-  const _ResultsBody({
+class RequestResultsBody extends StatefulWidget {
+  const RequestResultsBody({
     required this.state,
     required this.onUrgent,
     required this.onRefresh,
@@ -380,10 +380,10 @@ class _ResultsBody extends StatefulWidget {
   final VoidCallback onRefresh;
 
   @override
-  State<_ResultsBody> createState() => _ResultsBodyState();
+  State<RequestResultsBody> createState() => _RequestResultsBodyState();
 }
 
-class _ResultsBodyState extends State<_ResultsBody> {
+class _RequestResultsBodyState extends State<RequestResultsBody> {
   int? _connectingId;
   int? _selectedProviderId;
   bool _mapView = false;
@@ -439,10 +439,20 @@ class _ResultsBodyState extends State<_ResultsBody> {
         SnackBar(content: Text(f.message)),
       ),
       (conversation) {
-        context.read<AuthCubit>().bootstrap();
+        // Navigate first — bootstrap rebuild must not race the shell push
+        // (duplicate pageKey / HeroControllerScope crash).
         context.push('/chat/${conversation.id}');
+        context.read<AuthCubit>().bootstrap();
       },
     );
+  }
+
+  void _openProfile(MatchModel match) {
+    final profileId = match.provider?.id;
+    if (profileId == null) return;
+    final requestId = widget.state.request?.id;
+    final q = requestId != null ? '?requestId=$requestId' : '';
+    context.push('/providers/$profileId$q');
   }
 
   @override
@@ -483,6 +493,9 @@ class _ResultsBodyState extends State<_ResultsBody> {
                   match: selected,
                   selected: true,
                   connecting: _connectingId == selected.provider?.id,
+                  onOpenProfile: selected.provider == null
+                      ? null
+                      : () => _openProfile(selected),
                   onConnect: selected.provider == null
                       ? null
                       : () => _connect(selected),
@@ -542,10 +555,8 @@ class _ResultsBodyState extends State<_ResultsBody> {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                t('match.connect_remaining', params: {
-                  'count':
-                      '${context.watch<AuthCubit>().state.user?.connectQuota?.dailyRemaining ?? 0}',
-                }),
+                context.watch<AuthCubit>().state.user?.connectQuota?.hintLabel() ??
+                    t('match.connect_remaining', params: {'count': '0'}),
                 style: const TextStyle(color: AppColors.muted, fontSize: 13),
               ),
             ),
@@ -592,6 +603,8 @@ class _ResultsBodyState extends State<_ResultsBody> {
                   match: m,
                   selected: pid != null && pid == _selectedProviderId,
                   connecting: _connectingId == pid,
+                  onOpenProfile:
+                      m.provider == null ? null : () => _openProfile(m),
                   onConnect: m.provider == null ? null : () => _connect(m),
                 ),
               );

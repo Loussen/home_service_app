@@ -41,6 +41,13 @@ class ProfileRemoteDataSource {
     );
   }
 
+  Future<ProviderProfileModel> getPublicProfile(int id) async {
+    final res = await _client.dio.get('/providers/$id');
+    return ProviderProfileModel.fromJson(
+      res.data['data'] as Map<String, dynamic>,
+    );
+  }
+
   Future<ProviderProfileModel> createProfile({
     required List<int> categoryIds,
     required double latitude,

@@ -14,6 +14,8 @@ abstract class ProfileRepository {
 
   Future<Either<Failure, ProviderProfileModel>> getProfile(int id);
 
+  Future<Either<Failure, ProviderProfileModel>> getPublicProfile(int id);
+
   Future<Either<Failure, ProviderProfileModel>> saveProfile({
     int? id,
     required List<int> categoryIds,

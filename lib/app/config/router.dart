@@ -20,8 +20,15 @@ import 'package:home_service_app/features/wallet/presentation/pages/wallet_page.
 import 'package:home_service_app/features/chat/presentation/pages/reviews_page.dart';
 import 'package:home_service_app/features/verification/presentation/pages/verification_page.dart';
 import 'package:home_service_app/features/bookings/presentation/pages/bookings_page.dart';
+import 'package:home_service_app/features/search_ai/presentation/pages/request_detail_page.dart';
+import 'package:home_service_app/features/profile/presentation/pages/provider_public_profile_page.dart';
+
+/// Root navigator — full-screen routes (chat thread, etc.) sit above the tab shell.
+final GlobalKey<NavigatorState> rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final GoRouter appRouter = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/login',
   redirect: (context, state) {
     final auth = context.read<AuthCubit>().state;
@@ -34,9 +41,13 @@ final GoRouter appRouter = GoRouter(
       return isPublic ? null : '/login';
     }
 
-    if (loc == '/login' || loc == '/otp') {
+    final needsRole = auth.user?.needsRole == true || auth.isNewUser;
+    if (needsRole) {
+      return loc == '/role' ? null : '/role';
+    }
+
+    if (loc == '/role' || loc == '/login' || loc == '/otp') {
       if (AppConfig.forceOnboarding) return '/onboarding';
-      if (auth.isNewUser) return '/role';
       if (auth.user?.needsProviderOnboarding == true) return '/onboarding';
       return '/search';
     }
@@ -79,6 +90,44 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (_, state) => _adaptivePage(state, const BookingsPage()),
     ),
     GoRoute(
+      path: '/requests/:id',
+      pageBuilder: (_, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        return _adaptivePage(state, RequestDetailPage(requestId: id));
+      },
+    ),
+    GoRoute(
+      path: '/providers/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        final requestId =
+            int.tryParse(state.uri.queryParameters['requestId'] ?? '');
+        return _adaptivePage(
+          state,
+          ProviderPublicProfilePage(
+            profileId: id,
+            serviceRequestId: requestId,
+          ),
+          pageKey: ValueKey('provider-public-$id'),
+        );
+      },
+    ),
+    // Full-screen chat thread above tabs — avoids duplicate pageKey crash when
+    // pushing /chat/:id from /search (another StatefulShell branch).
+    GoRoute(
+      path: '/chat/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        return _adaptivePage(
+          state,
+          ChatThreadPage(conversationId: id),
+          pageKey: ValueKey('chat-thread-$id'),
+        );
+      },
+    ),
+    GoRoute(
       path: '/profiles/new',
       pageBuilder: (_, state) => _adaptivePage(state, const ProfileFormPage()),
     ),
@@ -111,18 +160,6 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: '/chat',
               builder: (_, __) => const ChatListPage(),
-              routes: [
-                GoRoute(
-                  path: ':id',
-                  pageBuilder: (_, state) {
-                    final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-                    return _adaptivePage(
-                      state,
-                      ChatThreadPage(conversationId: id),
-                    );
-                  },
-                ),
-              ],
             ),
           ],
         ),
@@ -136,9 +173,14 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-Page<dynamic> _adaptivePage(GoRouterState state, Widget child) {
+Page<dynamic> _adaptivePage(
+  GoRouterState state,
+  Widget child, {
+  LocalKey? pageKey,
+}) {
+  final key = pageKey ?? state.pageKey;
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return CupertinoPage<void>(key: state.pageKey, child: child);
+    return CupertinoPage<void>(key: key, child: child);
   }
-  return MaterialPage<void>(key: state.pageKey, child: child);
+  return MaterialPage<void>(key: key, child: child);
 }

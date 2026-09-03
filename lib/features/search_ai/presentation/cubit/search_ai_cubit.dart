@@ -267,6 +267,15 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     );
   }
 
+  /// Open an existing request (from «Sorğularım») and show matches.
+  Future<void> openRequest(int id) async {
+    emit(state.copyWith(phase: SearchPhase.processing, clearMessage: true));
+    await refreshRequest(id);
+    if (state.phase == SearchPhase.processing && state.request != null) {
+      _startPolling(id);
+    }
+  }
+
   Future<void> markUrgent() async {
     final id = state.request?.id;
     if (id == null) return;

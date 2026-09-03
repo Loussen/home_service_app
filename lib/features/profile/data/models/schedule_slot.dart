@@ -35,10 +35,20 @@ class ScheduleSlot {
 class TimeSlots {
   static const all = ['morning', 'afternoon', 'evening', 'night'];
 
+  /// Short labels for the edit matrix header.
   static String labelAz(String slot) => switch (slot) {
         'morning' => 'Səhər',
         'afternoon' => 'Gün.',
         'evening' => 'Axş.',
+        'night' => 'Gecə',
+        _ => slot,
+      };
+
+  /// Full labels for public profile chips.
+  static String labelFullAz(String slot) => switch (slot) {
+        'morning' => 'Səhər',
+        'afternoon' => 'Günorta',
+        'evening' => 'Axşam',
         'night' => 'Gecə',
         _ => slot,
       };

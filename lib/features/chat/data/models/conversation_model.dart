@@ -165,6 +165,7 @@ class ConversationModel {
     this.providerProfileId,
     this.serviceRequestId,
     this.unreadCount = 0,
+    this.canSendOffer = false,
     this.otherUser,
     this.profileTitle,
     this.lastMessage,
@@ -178,6 +179,7 @@ class ConversationModel {
   final int? providerProfileId;
   final int? serviceRequestId;
   final int unreadCount;
+  final bool canSendOffer;
   final ChatUserModel? otherUser;
   final String? profileTitle;
   final ChatMessageModel? lastMessage;
@@ -189,6 +191,7 @@ class ConversationModel {
     DateTime? lastMessageAt,
     List<ChatMessageModel>? messages,
     ChatUserModel? otherUser,
+    bool? canSendOffer,
   }) {
     return ConversationModel(
       id: id,
@@ -197,6 +200,7 @@ class ConversationModel {
       providerProfileId: providerProfileId,
       serviceRequestId: serviceRequestId,
       unreadCount: unreadCount,
+      canSendOffer: canSendOffer ?? this.canSendOffer,
       otherUser: otherUser ?? this.otherUser,
       profileTitle: profileTitle,
       lastMessage: lastMessage ?? this.lastMessage,
@@ -218,6 +222,7 @@ class ConversationModel {
       providerProfileId: json['provider_profile_id'] as int?,
       serviceRequestId: json['service_request_id'] as int?,
       unreadCount: json['unread_count'] as int? ?? 0,
+      canSendOffer: json['can_send_offer'] as bool? ?? false,
       otherUser: other != null ? ChatUserModel.fromJson(other) : null,
       profileTitle: profile?['title'] as String? ??
           (profile?['category'] as Map<String, dynamic>?)?['name_az'] as String?,

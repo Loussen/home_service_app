@@ -60,16 +60,23 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> setRole(String role) async {
-    emit(state.copyWith(loading: true));
+  Future<bool> setRole(String role) async {
+    emit(state.copyWith(loading: true, clearMessage: true));
     final result = await _repo.setRole(role);
-    result.fold(
-      (f) => emit(state.copyWith(loading: false, message: f.message)),
-      (user) => emit(state.copyWith(
-        loading: false,
-        status: AuthStatus.authenticated,
-        user: user,
-      )),
+    return result.fold(
+      (f) {
+        emit(state.copyWith(loading: false, message: f.message));
+        return false;
+      },
+      (user) {
+        emit(state.copyWith(
+          loading: false,
+          status: AuthStatus.authenticated,
+          user: user,
+          isNewUser: false,
+        ));
+        return true;
+      },
     );
   }
 

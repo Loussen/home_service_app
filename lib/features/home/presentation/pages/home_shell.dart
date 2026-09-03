@@ -81,11 +81,11 @@ class HomeShell extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               MsCard(
-                onTap: () => context.push('/role'),
+                onTap: () => context.push('/account'),
                 child: const ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.person_outline, color: AppColors.secondary),
-                  title: Text('Rol dəyiş'),
+                  title: Text('Profil'),
                   trailing: Icon(Icons.chevron_right, color: AppColors.muted),
                 ),
               ),

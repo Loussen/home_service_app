@@ -10,11 +10,18 @@ class RolePage extends StatelessWidget {
   const RolePage({super.key});
 
   Future<void> _pick(BuildContext context, String role) async {
-    await context.read<AuthCubit>().setRole(role);
+    final ok = await context.read<AuthCubit>().setRole(role);
     if (!context.mounted) return;
+    if (!ok) {
+      final message = context.read<AuthCubit>().state.message;
+      if (message != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      }
+      return;
+    }
     final user = context.read<AuthCubit>().state.user;
     if (role == 'provider' && (user?.needsProviderOnboarding ?? true)) {
-      context.push('/onboarding');
+      context.go('/onboarding');
       return;
     }
     context.go('/search');
@@ -23,7 +30,7 @@ class RolePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuthChrome(
-      showBack: true,
+      showBack: false,
       subtitle: t('role.subtitle'),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -52,6 +59,14 @@ class RolePage extends StatelessWidget {
             title: t('role.provider.title'),
             subtitle: t('role.provider.subtitle'),
             onTap: () => _pick(context, 'provider'),
+          ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: () async {
+              await context.read<AuthCubit>().logout();
+              if (context.mounted) context.go('/login');
+            },
+            child: Text(t('account.menu.logout')),
           ),
         ],
       ),

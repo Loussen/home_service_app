@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-API_BASE_URL="${API_BASE_URL:-http://$(ipconfig getifaddr en0):8000/api/v1}"
+API_BASE_URL="${API_BASE_URL:-https://mysancho.com/api/v1}"
 DEVICE="${DEVICE:-3334543D-7A6C-55D4-A18C-A09168CCC80A}"
 BUNDLE="az.homeservice.homeServiceApp"
 
