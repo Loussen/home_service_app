@@ -532,7 +532,7 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
               ),
               if (request.category != null)
                 _ResultChip(
-                  label: request.category!.nameAz,
+                  label: request.category!.displayName,
                   background: AppColors.peach,
                   foreground: AppColors.primaryDark,
                 ),

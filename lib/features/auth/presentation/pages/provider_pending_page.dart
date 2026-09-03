@@ -131,7 +131,7 @@ class ProviderPendingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'MySancho',
+                'My Sancho',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontFamily: 'Fraunces',
                       color: AppColors.primary,

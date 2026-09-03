@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/core/network/token_storage.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 
 typedef AccountBlockedHandler = void Function(String message);
 
@@ -48,6 +49,7 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          options.headers['Accept-Language'] = AppRemoteConfig.instance.locale;
           handler.next(options);
         },
         onError: (error, handler) {

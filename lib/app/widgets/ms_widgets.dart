@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 
-/// Soft surface card used across MySancho screens.
+/// Soft surface card used across My Sancho screens.
 class MsCard extends StatelessWidget {
   const MsCard({
     super.key,
@@ -78,20 +78,43 @@ class MsSectionTitle extends StatelessWidget {
 }
 
 class MsBrandTitle extends StatelessWidget {
-  const MsBrandTitle({super.key, this.fontSize = 28});
+  const MsBrandTitle({
+    super.key,
+    this.fontSize = 28,
+    this.showMark = true,
+  });
 
   final double fontSize;
+  final bool showMark;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'MySancho',
+    final title = Text(
+      'My Sancho',
       style: GoogleFonts.fraunces(
         fontSize: fontSize,
         fontWeight: FontWeight.w700,
         color: AppColors.primary,
         height: 1.1,
       ),
+    );
+    if (!showMark) return title;
+    final markSize = fontSize * 0.95;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(markSize * 0.22),
+          child: Image.asset(
+            'assets/brand/logo-color.jpg',
+            width: markSize,
+            height: markSize,
+            fit: BoxFit.cover,
+          ),
+        ),
+        SizedBox(width: fontSize * 0.28),
+        Flexible(child: title),
+      ],
     );
   }
 }

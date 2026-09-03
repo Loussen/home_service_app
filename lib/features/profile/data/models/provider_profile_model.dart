@@ -70,9 +70,9 @@ class ProviderProfileModel {
 
   List<String> get categoryLabels {
     if (categories.isNotEmpty) {
-      return categories.map((c) => c.nameAz).toList();
+      return categories.map((c) => c.displayName).toList();
     }
-    if (category != null) return [category!.nameAz];
+    if (category != null) return [category!.displayName];
     return const [];
   }
 

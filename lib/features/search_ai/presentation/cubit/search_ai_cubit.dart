@@ -168,7 +168,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
           .map((e) => e.$1)
           .where((c) => c.id == state.selectedCategoryId)
           .firstOrNull;
-      text = cat?.nameAz ?? t('search.category_fallback');
+      text = cat?.displayName ?? t('search.category_fallback');
     }
 
     emit(state.copyWith(

@@ -276,7 +276,7 @@ class _CategoryTile extends StatelessWidget {
           onTap: isGroup ? null : () => onTap(cat.id),
           dense: isGroup,
           title: Text(
-            cat.nameAz,
+            cat.displayName,
             style: TextStyle(
               fontWeight: isGroup ? FontWeight.w800 : FontWeight.w700,
               color: isGroup

@@ -31,7 +31,7 @@ class AppConfig {
     defaultValue: false,
   );
 
-  static const String appName = 'MySancho';
+  static const String appName = 'My Sancho';
 
   static String get apiHostHint => apiBaseUrl;
 }

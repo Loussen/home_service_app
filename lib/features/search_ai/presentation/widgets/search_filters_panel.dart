@@ -91,7 +91,7 @@ class SearchFiltersPanel extends StatelessWidget {
             children: [
               for (final cat in leaves)
                 ChoiceChip(
-                  label: Text(cat.nameAz),
+                  label: Text(cat.displayName),
                   selected: selectedCategoryId == cat.id,
                   selectedColor: AppColors.peach,
                   onSelected: enabled

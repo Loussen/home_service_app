@@ -35,9 +35,9 @@ class AuthChrome extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.parchment,
-                  Color(0xFFE8DFD4),
                   AppColors.mist,
+                  AppColors.parchment,
+                  Color(0xFFFFE8CC),
                 ],
               ),
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),

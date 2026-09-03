@@ -44,6 +44,32 @@ class BootstrapStep {
   final String title;
 }
 
+class StaticPageMenuItem {
+  const StaticPageMenuItem({
+    required this.slug,
+    required this.title,
+    this.sortOrder = 0,
+  });
+
+  factory StaticPageMenuItem.fromJson(Map<String, dynamic> json) {
+    return StaticPageMenuItem(
+      slug: (json['slug'] as String?) ?? '',
+      title: (json['title'] as String?) ?? '',
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final String slug;
+  final String title;
+  final int sortOrder;
+
+  Map<String, dynamic> toJson() => {
+        'slug': slug,
+        'title': title,
+        'sort_order': sortOrder,
+      };
+}
+
 class BootstrapConfig {
   const BootstrapConfig({
     this.maxCategoryTags = 3,
@@ -136,6 +162,7 @@ class BootstrapPayload {
     this.strings = const {},
     this.config = const BootstrapConfig(),
     this.flags = const BootstrapFlags(),
+    this.staticPages = const [],
   });
 
   factory BootstrapPayload.fromJson(Map<String, dynamic> json) {
@@ -160,6 +187,18 @@ class BootstrapPayload {
         ? supportedRaw.map((e) => '$e').toList()
         : <String>[];
 
+    final pagesRaw = json['static_pages'];
+    final pages = pagesRaw is List
+        ? pagesRaw
+            .whereType<Map>()
+            .map(
+              (e) =>
+                  StaticPageMenuItem.fromJson(Map<String, dynamic>.from(e)),
+            )
+            .where((e) => e.slug.isNotEmpty)
+            .toList()
+        : <StaticPageMenuItem>[];
+
     return BootstrapPayload(
       version: (json['version'] as num?)?.toInt() ?? 1,
       locale: (json['locale'] as String?) ?? 'az',
@@ -177,6 +216,7 @@ class BootstrapPayload {
             ? Map<String, dynamic>.from(json['flags'] as Map)
             : null,
       ),
+      staticPages: pages,
     );
   }
 
@@ -188,6 +228,7 @@ class BootstrapPayload {
   final Map<String, String> strings;
   final BootstrapConfig config;
   final BootstrapFlags flags;
+  final List<StaticPageMenuItem> staticPages;
 
   Map<String, dynamic> toJson() => {
         'version': version,
@@ -196,6 +237,7 @@ class BootstrapPayload {
         'supported_locales': supportedLocales,
         'locale_labels': localeLabels,
         'strings': strings,
+        'static_pages': staticPages.map((e) => e.toJson()).toList(),
         'config': {
           'max_category_tags': config.maxCategoryTags,
           'fees': {

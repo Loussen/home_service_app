@@ -27,6 +27,7 @@ class AppRemoteConfig {
   String get locale => _payload.locale;
   List<String> get supportedLocales => _payload.supportedLocales;
   Map<String, String> get localeLabels => _payload.localeLabels;
+  List<StaticPageMenuItem> get staticPages => _payload.staticPages;
 
   /// Load cached bootstrap for [locale], then refresh from API.
   Future<void> load(
@@ -79,6 +80,7 @@ class AppRemoteConfig {
         onboardingSteps: steps,
       ),
       flags: remote.flags,
+      staticPages: remote.staticPages,
     );
   }
 
@@ -117,7 +119,7 @@ class AppRemoteConfig {
     'otp.helper': 'Lokal: 123456',
     'otp.submit': 'Təsdiqlə',
     'otp.submitting': 'Yoxlanır…',
-    'role.subtitle': 'MySancho-da necə iştirak etmək istəyirsiniz?',
+    'role.subtitle': 'My Sancho-da necə iştirak etmək istəyirsiniz?',
     'role.title': 'Rol seçin',
     'role.hint':
         'Bu seçim birdəfəlikdir — eyni nömrə yalnız bir rolda ola bilər.',
@@ -245,8 +247,10 @@ class AppRemoteConfig {
     'account.menu.favorites': 'Seçilmişlər',
     'account.menu.switch_role': 'Rol dəyiş',
     'account.menu.settings': 'Parametrlər',
+    'account.menu.info': 'Məlumat',
     'account.menu.language': 'Dil',
     'account.menu.logout': 'Çıxış',
+    'static_page.load_error': 'Səhifə yüklənmədi',
     'locale.az': 'Azərbaycan',
     'locale.en': 'English',
     'locale.ru': 'Русский',
@@ -263,6 +267,10 @@ class AppRemoteConfig {
         'Sorğunuz 1 saat ərzində baxılacaq. Təsdiqləndikdən sonra iş sorğuları gələcək.',
     'provider.approval.approved':
         'Hesabınız təsdiqləndi. İndi iş sorğuları gələ bilər.',
+    'web.status.approved': 'Təsdiqli',
+    'web.status.rejected': 'Rədd edilib',
+    'web.status.blocked': 'Bloklanıb',
+    'web.status.pending': 'Gözləyir',
     'provider.approval.rejected_title': 'Qeydiyyat rədd edilib',
     'provider.approval.rejected':
         'Hesabınız rədd edilib. Dəstəklə əlaqə saxlayın və ya profili tamamlayın.',

@@ -217,7 +217,7 @@ class AccountPage extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
               children: [
                 Text(
-                  'MySancho',
+                  'My Sancho',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: AppColors.primary,
                       ),
@@ -441,11 +441,33 @@ class AccountPage extends StatelessWidget {
                         ),
                         onTap: () => _pickLanguage(context),
                       ),
-                      _MenuTile(
-                        icon: Icons.settings_outlined,
-                        label: t('account.menu.settings'),
-                        onTap: () {},
-                      ),
+                      if (AppRemoteConfig.instance.staticPages.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              t('account.menu.info'),
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ...AppRemoteConfig.instance.staticPages.map(
+                          (page) => _MenuTile(
+                            icon: Icons.article_outlined,
+                            label: page.title,
+                            onTap: () => context.push(
+                              '/page/${page.slug}',
+                              extra: page.title,
+                            ),
+                          ),
+                        ),
+                      ],
                       _MenuTile(
                         icon: Icons.logout,
                         label: t('account.menu.logout'),

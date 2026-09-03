@@ -67,7 +67,7 @@ class _MatchesMapState extends State<MatchesMap> {
           infoWindow: InfoWindow(
             title: (p.userName != null && p.userName!.trim().isNotEmpty)
                 ? p.userName!
-                : (p.title ?? p.category?.nameAz ?? t('match.provider_fallback')),
+                : (p.title ?? p.category?.displayName ?? t('match.provider_fallback')),
             snippet: t('match.score', params: {'score': '${m.matchScore.round()}'}),
           ),
           icon: BitmapDescriptor.defaultMarkerWithHue(

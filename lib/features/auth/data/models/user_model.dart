@@ -99,16 +99,14 @@ class UserModel {
 
   String get displayProfileStatus {
     if (isBlocked || status == 'blocked' || profileStatus == 'blocked') {
-      return profileStatusLabel ?? 'Bloklanıb';
+      return t('web.status.blocked');
     }
-    if (profileStatusLabel != null && profileStatusLabel!.isNotEmpty) {
-      return profileStatusLabel!;
-    }
-    return switch (providerApprovalStatus) {
-      'approved' => 'Təsdiqli',
-      'rejected' => 'Rədd edilib',
-      'pending' => 'Gözləyir',
-      _ => '—',
+    final code = profileStatus ?? providerApprovalStatus;
+    return switch (code) {
+      'approved' => t('web.status.approved'),
+      'rejected' => t('web.status.rejected'),
+      'pending' => t('web.status.pending'),
+      _ => profileStatusLabel ?? '—',
     };
   }
 

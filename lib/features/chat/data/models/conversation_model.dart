@@ -225,6 +225,7 @@ class ConversationModel {
       canSendOffer: json['can_send_offer'] as bool? ?? false,
       otherUser: other != null ? ChatUserModel.fromJson(other) : null,
       profileTitle: profile?['title'] as String? ??
+          (profile?['category'] as Map<String, dynamic>?)?['name'] as String? ??
           (profile?['category'] as Map<String, dynamic>?)?['name_az'] as String?,
       lastMessage: last != null ? ChatMessageModel.fromJson(last) : null,
       lastMessageAt: json['last_message_at'] != null

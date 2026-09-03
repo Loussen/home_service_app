@@ -57,7 +57,8 @@ class IncomingJobModel {
       requestStatus: request?['status'] as String?,
       transcribedText: request?['transcribed_text'] as String?,
       address: request?['address'] as String?,
-      categoryName: category?['name_az'] as String?,
+      categoryName: category?['name'] as String? ??
+          category?['name_az'] as String?,
       createdAt: request?['created_at'] as String?,
       clientName: client?['name'] as String?,
       reasons: reasons,

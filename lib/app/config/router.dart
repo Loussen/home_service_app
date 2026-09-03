@@ -16,6 +16,7 @@ import 'package:home_service_app/features/chat/presentation/pages/chat_thread_pa
 import 'package:home_service_app/features/home/presentation/pages/account_page.dart';
 import 'package:home_service_app/features/home/presentation/pages/main_tab_shell.dart';
 import 'package:home_service_app/features/home/presentation/pages/role_tabs.dart';
+import 'package:home_service_app/features/home/presentation/pages/static_page_screen.dart';
 import 'package:home_service_app/features/profile/presentation/pages/profile_form_page.dart';
 import 'package:home_service_app/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/reviews_page.dart';
@@ -69,6 +70,7 @@ final GoRouter appRouter = GoRouter(
         loc == '/account' ||
         loc == '/onboarding' ||
         loc.startsWith('/profiles') ||
+        loc.startsWith('/page/') ||
         loc == '/wallet' ||
         loc == '/verification';
 
@@ -117,6 +119,19 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/bookings',
       pageBuilder: (_, state) => _adaptivePage(state, const BookingsPage()),
+    ),
+    GoRoute(
+      path: '/page/:slug',
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final slug = state.pathParameters['slug'] ?? '';
+        final title = state.extra is String ? state.extra as String : null;
+        return _adaptivePage(
+          state,
+          StaticPageScreen(slug: slug, initialTitle: title),
+          pageKey: ValueKey('static-page-$slug'),
+        );
+      },
     ),
     GoRoute(
       path: '/requests/:id',
