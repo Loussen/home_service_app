@@ -15,6 +15,7 @@ abstract class SearchRepository {
     int? childAge,
     bool? hasPet,
     double? budgetMax,
+    int? durationSeconds,
   });
 
   Future<Either<Failure, ServiceRequestModel>> submitText({
@@ -33,7 +34,16 @@ abstract class SearchRepository {
 
   Future<Either<Failure, ServiceRequestModel>> getRequest(int id);
 
-  Future<Either<Failure, List<ServiceRequestModel>>> listRequests();
+  Future<Either<Failure, ({
+    List<ServiceRequestModel> items,
+    int currentPage,
+    int lastPage,
+    int total,
+  })>> listRequests({
+    int page = 1,
+    int perPage = 10,
+    String filter = 'all',
+  });
 
   Future<Either<Failure, ({ServiceRequestModel request, double balance})>>
       markUrgent(int id);

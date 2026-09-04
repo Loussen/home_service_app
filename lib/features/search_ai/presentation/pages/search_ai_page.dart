@@ -538,7 +538,7 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                 ),
               if (request.parsedCriteria?['time_slot'] != null)
                 _ResultChip(
-                  label: _timeSlotAz('${request.parsedCriteria!['time_slot']}'),
+                  label: t('web.schedule.${request.parsedCriteria!['time_slot']}'),
                   background: AppColors.cream,
                   foreground: AppColors.primaryDark,
                 ),
@@ -713,16 +713,6 @@ String _statusAz(String status) {
     'completed' => t('request.status.completed'),
     'cancelled' => t('request.status.cancelled'),
     _ => status,
-  };
-}
-
-String _timeSlotAz(String slot) {
-  return switch (slot) {
-    'morning' => 'Səhər',
-    'afternoon' => 'Günorta',
-    'evening' => 'Axşam',
-    'night' => 'Gecə',
-    _ => slot,
   };
 }
 

@@ -19,6 +19,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
   Timer? _recordTimer;
   Timer? _pollTimer;
   int _pollAttempts = 0;
+  int _lastAudioSeconds = 0;
 
   Future<void> init() async {
     emit(state.copyWith(phase: SearchPhase.locating, clearMessage: true));
@@ -127,7 +128,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final next = state.recordSeconds + 1;
       emit(state.copyWith(recordSeconds: next));
-      if (next >= 60) {
+      if (next >= 20) {
         _stopRecording();
       }
     });
@@ -143,9 +144,17 @@ class SearchAiCubit extends Cubit<SearchAiState> {
       localAudioPath: path,
       recordSeconds: 0,
     ));
-    if (path != null && seconds >= 1) {
-      await submit();
+    if (path == null) return;
+    if (seconds < 5) {
+      emit(state.copyWith(
+        phase: SearchPhase.error,
+        message: t('web.request.voice_too_short', params: {'sec': '5'}),
+        clearAudio: true,
+      ));
+      return;
     }
+    _lastAudioSeconds = seconds.clamp(5, 20);
+    await submit();
   }
 
   Future<void> submit() async {
@@ -190,6 +199,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             childAge: state.childAge,
             hasPet: state.hasPet,
             budgetMax: state.budgetMax,
+            durationSeconds: _lastAudioSeconds > 0 ? _lastAudioSeconds : null,
           )
         : await _repo.submitText(
             text: text,

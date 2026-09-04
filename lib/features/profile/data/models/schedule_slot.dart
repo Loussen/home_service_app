@@ -1,3 +1,5 @@
+import 'package:home_service_app/core/remote/app_remote_config.dart';
+
 class ScheduleSlot {
   const ScheduleSlot({
     required this.dayOfWeek,
@@ -36,32 +38,14 @@ class TimeSlots {
   static const all = ['morning', 'afternoon', 'evening', 'night'];
 
   /// Short labels for the edit matrix header.
-  static String labelAz(String slot) => switch (slot) {
-        'morning' => 'Səhər',
-        'afternoon' => 'Gün.',
-        'evening' => 'Axş.',
-        'night' => 'Gecə',
-        _ => slot,
-      };
+  static String labelShort(String slot) => t('web.schedule.${slot}_short');
 
   /// Full labels for public profile chips.
-  static String labelFullAz(String slot) => switch (slot) {
-        'morning' => 'Səhər',
-        'afternoon' => 'Günorta',
-        'evening' => 'Axşam',
-        'night' => 'Gecə',
-        _ => slot,
-      };
+  static String labelFull(String slot) => t('web.schedule.$slot');
 }
 
 class WeekDays {
-  static const labels = {
-    1: 'B.e',
-    2: 'Ç.a',
-    3: 'Ç',
-    4: 'C.a',
-    5: 'C',
-    6: 'Ş',
-    7: 'B',
-  };
+  static String label(int day) => t('web.schedule.day_$day');
+
+  static const count = 7;
 }

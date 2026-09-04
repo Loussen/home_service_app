@@ -20,6 +20,7 @@ class SearchRemoteDataSource {
     int? childAge,
     bool? hasPet,
     double? budgetMax,
+    int? durationSeconds,
   }) async {
     final form = FormData.fromMap({
       'audio': await MultipartFile.fromFile(
@@ -37,6 +38,7 @@ class SearchRemoteDataSource {
       if (childAge != null) 'child_age': childAge,
       if (hasPet != null) 'has_pet': hasPet ? '1' : '0',
       if (budgetMax != null) 'budget_max': budgetMax,
+      if (durationSeconds != null) 'duration_seconds': durationSeconds,
     });
 
     final res = await _client.dio.post('/service-requests/audio', data: form);
@@ -84,12 +86,47 @@ class SearchRemoteDataSource {
     );
   }
 
-  Future<List<ServiceRequestModel>> listRequests() async {
-    final res = await _client.dio.get('/service-requests');
-    final list = res.data['data'] as List<dynamic>;
-    return list
-        .map((e) => ServiceRequestModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+  Future<({
+    List<ServiceRequestModel> items,
+    int currentPage,
+    int lastPage,
+    int total,
+  })> listRequests({
+    int page = 1,
+    int perPage = 10,
+    String filter = 'all',
+  }) async {
+    final res = await _client.dio.get(
+      '/service-requests',
+      queryParameters: {
+        'page': page,
+        'per_page': perPage,
+        'filter': filter,
+      },
+    );
+    final raw = res.data['data'];
+    if (raw is List) {
+      final items = raw
+          .map((e) => ServiceRequestModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return (
+        items: items,
+        currentPage: 1,
+        lastPage: 1,
+        total: items.length,
+      );
+    }
+    final map = raw as Map<String, dynamic>;
+    final list = (map['items'] as List<dynamic>? ?? const []);
+    final meta = map['meta'] as Map<String, dynamic>? ?? const {};
+    return (
+      items: list
+          .map((e) => ServiceRequestModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      currentPage: (meta['current_page'] as num?)?.toInt() ?? page,
+      lastPage: (meta['last_page'] as num?)?.toInt() ?? 1,
+      total: (meta['total'] as num?)?.toInt() ?? list.length,
+    );
   }
 
   Future<({ServiceRequestModel request, double balance})> markUrgent(

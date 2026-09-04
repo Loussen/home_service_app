@@ -299,16 +299,6 @@ class _ScheduleSummary extends StatelessWidget {
 
   final List<ScheduleSlot> slots;
 
-  static const _dayLabels = {
-    1: 'B.e',
-    2: 'Ç.a',
-    3: 'Çər',
-    4: 'C.a',
-    5: 'Cüm',
-    6: 'Şən',
-    7: 'Baz',
-  };
-
   @override
   Widget build(BuildContext context) {
     final byDay = <int, Set<String>>{};
@@ -338,7 +328,7 @@ class _ScheduleSummary extends StatelessWidget {
             if (i > 0)
               const Divider(height: 1, thickness: 1, color: AppColors.divider),
             _ScheduleDayRow(
-              dayLabel: _dayLabels[days[i]] ?? '${days[i]}',
+              dayLabel: WeekDays.label(days[i]),
               striped: i.isOdd,
               activeSlots: [
                 for (final slot in TimeSlots.all)
@@ -403,7 +393,7 @@ class _ScheduleDayRow extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      TimeSlots.labelFullAz(slot),
+                      TimeSlots.labelFull(slot),
                       style: const TextStyle(
                         color: AppColors.primaryDark,
                         fontSize: 12,

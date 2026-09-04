@@ -49,7 +49,7 @@ class ScheduleMatrix extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
                       child: Text(
-                        TimeSlots.labelAz(slot),
+                        TimeSlots.labelShort(slot),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 10,
@@ -60,7 +60,7 @@ class ScheduleMatrix extends StatelessWidget {
                     ),
                 ],
               ),
-              for (var i = 0; i < WeekDays.labels.length; i++)
+              for (var i = 0; i < WeekDays.count; i++)
                 TableRow(
                   decoration: BoxDecoration(
                     color: i.isEven ? AppColors.peachRow : Colors.white,
@@ -69,7 +69,7 @@ class ScheduleMatrix extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
-                        WeekDays.labels[i + 1]!,
+                        WeekDays.label(i + 1),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,

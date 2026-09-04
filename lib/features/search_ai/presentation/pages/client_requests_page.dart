@@ -6,6 +6,8 @@ import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/search_ai/data/models/service_request_model.dart';
 import 'package:home_service_app/features/search_ai/domain/search_repository.dart';
 
+enum _RequestsFilter { all, matched, unmatched }
+
 class ClientRequestsPage extends StatefulWidget {
   const ClientRequestsPage({super.key});
 
@@ -17,6 +19,16 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
   bool _loading = true;
   List<ServiceRequestModel> _items = [];
   String? _error;
+  _RequestsFilter _filter = _RequestsFilter.all;
+  int _page = 1;
+  int _lastPage = 1;
+  int _total = 0;
+
+  String get _filterParam => switch (_filter) {
+        _RequestsFilter.matched => 'matched',
+        _RequestsFilter.unmatched => 'unmatched',
+        _RequestsFilter.all => 'all',
+      };
 
   @override
   void initState() {
@@ -24,23 +36,37 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({int page = 1}) async {
     setState(() {
       _loading = true;
       _error = null;
+      _page = page;
     });
-    final result = await getIt<SearchRepository>().listRequests();
+    final result = await getIt<SearchRepository>().listRequests(
+      page: page,
+      perPage: 10,
+      filter: _filterParam,
+    );
     if (!mounted) return;
     result.fold(
       (f) => setState(() {
         _loading = false;
         _error = f.message;
       }),
-      (items) => setState(() {
+      (pageData) => setState(() {
         _loading = false;
-        _items = items;
+        _items = pageData.items;
+        _page = pageData.currentPage;
+        _lastPage = pageData.lastPage;
+        _total = pageData.total;
       }),
     );
+  }
+
+  void _setFilter(_RequestsFilter filter) {
+    if (_filter == filter) return;
+    setState(() => _filter = filter);
+    _load(page: 1);
   }
 
   @override
@@ -58,19 +84,45 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: Text(t('web.requests.filter_all')),
+                    selected: _filter == _RequestsFilter.all,
+                    onSelected: (_) => _setFilter(_RequestsFilter.all),
+                  ),
+                  ChoiceChip(
+                    label: Text(t('web.requests.filter_matched')),
+                    selected: _filter == _RequestsFilter.matched,
+                    onSelected: (_) => _setFilter(_RequestsFilter.matched),
+                  ),
+                  ChoiceChip(
+                    label: Text(t('web.requests.filter_unmatched')),
+                    selected: _filter == _RequestsFilter.unmatched,
+                    onSelected: (_) => _setFilter(_RequestsFilter.unmatched),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _items.isEmpty
                       ? Center(
                           child: Text(
-                            _error ?? t('requests.empty'),
+                            _error ??
+                                (_filter == _RequestsFilter.all
+                                    ? t('requests.empty')
+                                    : t('web.requests.filter_empty')),
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: AppColors.muted),
                           ),
                         )
                       : RefreshIndicator(
-                          onRefresh: _load,
+                          onRefresh: () => _load(page: 1),
                           child: ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                             itemCount: _items.length,
@@ -87,14 +139,14 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () async {
                                     await context.push('/requests/${r.id}');
-                                    if (mounted) _load();
+                                    if (mounted) _load(page: _page);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(16),
-                                      border:
-                                          Border.all(color: AppColors.divider),
+                                      border: Border.all(
+                                          color: AppColors.divider),
                                     ),
                                     child: Row(
                                       children: [
@@ -105,10 +157,12 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                                             children: [
                                               Text(
                                                 r.transcribedText ??
-                                                    t('requests.item_fallback',
-                                                        params: {
-                                                          'id': '${r.id}',
-                                                        }),
+                                                    t(
+                                                      'requests.item_fallback',
+                                                      params: {
+                                                        'id': '${r.id}',
+                                                      },
+                                                    ),
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.w700,
                                                 ),
@@ -139,6 +193,38 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                           ),
                         ),
             ),
+            if (_lastPage > 1)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        t('web.requests.page_info', params: {
+                          'page': '$_page',
+                          'last': '$_lastPage',
+                          'total': '$_total',
+                        }),
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed:
+                          _page > 1 ? () => _load(page: _page - 1) : null,
+                      child: Text(t('web.requests.prev')),
+                    ),
+                    TextButton(
+                      onPressed: _page < _lastPage
+                          ? () => _load(page: _page + 1)
+                          : null,
+                      child: Text(t('web.requests.next')),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

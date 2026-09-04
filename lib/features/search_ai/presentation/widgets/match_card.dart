@@ -98,7 +98,12 @@ class MatchCard extends StatelessWidget {
                           'match.reason.bump_hint',
                           params: r.params.isEmpty ? null : r.params,
                         ),
-                        child: _BumpBadge(label: r.label),
+                        child: _BumpBadge(
+                          label: t(
+                            'profiles.bump_remaining',
+                            params: r.params.isEmpty ? null : r.params,
+                          ),
+                        ),
                       );
                     }
                     return _Chip(label: r.label);

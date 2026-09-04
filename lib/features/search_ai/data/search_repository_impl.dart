@@ -23,6 +23,7 @@ class SearchRepositoryImpl implements SearchRepository {
     int? childAge,
     bool? hasPet,
     double? budgetMax,
+    int? durationSeconds,
   }) async {
     try {
       return Right(await _remote.submitAudio(
@@ -37,6 +38,7 @@ class SearchRepositoryImpl implements SearchRepository {
         childAge: childAge,
         hasPet: hasPet,
         budgetMax: budgetMax,
+        durationSeconds: durationSeconds,
       ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));
@@ -86,9 +88,22 @@ class SearchRepositoryImpl implements SearchRepository {
   }
 
   @override
-  Future<Either<Failure, List<ServiceRequestModel>>> listRequests() async {
+  Future<Either<Failure, ({
+    List<ServiceRequestModel> items,
+    int currentPage,
+    int lastPage,
+    int total,
+  })>> listRequests({
+    int page = 1,
+    int perPage = 10,
+    String filter = 'all',
+  }) async {
     try {
-      return Right(await _remote.listRequests());
+      return Right(await _remote.listRequests(
+        page: page,
+        perPage: perPage,
+        filter: filter,
+      ));
     } on DioException catch (e) {
       return Left(ServerFailure(_msg(e)));
     }
