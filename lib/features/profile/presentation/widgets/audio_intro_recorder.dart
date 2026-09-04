@@ -143,13 +143,21 @@ class _AudioIntroRecorderState extends State<AudioIntroRecorder> {
             const SizedBox(height: 12),
             Row(
               children: [
-                FilledButton.tonalIcon(
-                  onPressed: _toggleRecord,
-                  icon: Icon(_recording ? Icons.stop : Icons.mic),
-                  label: Text(
-                    _recording
-                        ? t('audio.record_stop', params: {'time': '$mm:$ss'})
-                        : t('audio.record'),
+                Flexible(
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      // Theme uses Size.fromHeight → infinite width; Row forbids that.
+                      minimumSize: const Size(0, 48),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: _toggleRecord,
+                    icon: Icon(_recording ? Icons.stop : Icons.mic),
+                    label: Text(
+                      _recording
+                          ? t('audio.record_stop', params: {'time': '$mm:$ss'})
+                          : t('audio.record'),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),

@@ -14,4 +14,7 @@ abstract class AuthRepository {
   Future<Either<Failure, UserModel>> uploadAvatar(String filePath);
   Future<Either<Failure, UserModel>> resubmitProviderReview();
   Future<Either<Failure, Unit>> logout();
+
+  /// Drop local Sanctum token without calling the API (OTP re-login).
+  Future<void> clearLocalSession();
 }

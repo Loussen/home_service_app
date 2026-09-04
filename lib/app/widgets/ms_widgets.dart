@@ -19,31 +19,25 @@ class MsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = Container(
-      width: double.infinity,
+    final body = Padding(
       padding: padding,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: child,
     );
-    if (onTap == null) return body;
     return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+      color: color,
+      elevation: 0,
+      shadowColor: AppColors.ink.withValues(alpha: 0.04),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        child: body,
+        side: const BorderSide(color: AppColors.divider),
       ),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null
+          ? body
+          : InkWell(
+              onTap: onTap,
+              child: body,
+            ),
     );
   }
 }

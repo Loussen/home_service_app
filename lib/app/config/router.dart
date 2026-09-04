@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_config.dart';
+import 'package:home_service_app/app/config/auth_router_refresh.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
 import 'package:home_service_app/features/auth/presentation/pages/login_page.dart';
@@ -38,6 +39,7 @@ bool _providerAwaitingApproval(AuthState auth) {
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/login',
+  refreshListenable: authRouterRefresh,
   redirect: (context, state) {
     final auth = context.read<AuthCubit>().state;
     final loc = state.matchedLocation;
@@ -46,6 +48,10 @@ final GoRouter appRouter = GoRouter(
     if (auth.status == AuthStatus.unknown) return null;
 
     if (auth.status != AuthStatus.authenticated) {
+      // OTP only after sendOtp set pendingPhone — avoid orphan /otp.
+      if (loc == '/otp' && (auth.pendingPhone == null || auth.pendingPhone!.isEmpty)) {
+        return '/login';
+      }
       return isPublic ? null : '/login';
     }
 
@@ -54,6 +60,7 @@ final GoRouter appRouter = GoRouter(
       return loc == '/role' ? null : '/role';
     }
 
+    // Session restore / stale login UI: never stay on login or otp when already in.
     if (loc == '/role' || loc == '/login' || loc == '/otp') {
       if (AppConfig.forceOnboarding) return '/onboarding';
       if (auth.user?.needsProviderOnboarding == true) return '/onboarding';

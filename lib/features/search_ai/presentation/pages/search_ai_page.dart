@@ -346,7 +346,9 @@ class _SubmitChargeInfo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Balansdan çıxılacaq: ${total.toStringAsFixed(2)} AZN',
+            t('search.fee_total', params: {
+              'amount': total.toStringAsFixed(2),
+            }),
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               color: AppColors.ink,
@@ -354,8 +356,14 @@ class _SubmitChargeInfo extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Axtarış: ${base.toStringAsFixed(2)} AZN'
-            '${isUrgent ? ' + Təcili: ${urgent.toStringAsFixed(2)} AZN' : ''}',
+            isUrgent
+                ? t('search.fee_breakdown_urgent', params: {
+                    'base': base.toStringAsFixed(2),
+                    'urgent': urgent.toStringAsFixed(2),
+                  })
+                : t('search.fee_breakdown', params: {
+                    'base': base.toStringAsFixed(2),
+                  }),
             style: const TextStyle(
               color: AppColors.muted,
               fontSize: 13,

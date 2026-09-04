@@ -117,14 +117,17 @@ class _ProfileFormView extends StatelessWidget {
                       onRecorded: cubit.setLocalAudio,
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: state.saving
-                          ? null
-                          : () => cubit.save(),
-                      child: Text(
-                        state.saving
-                            ? t('profile.form.saving')
-                            : t('profile.form.save'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: state.saving
+                            ? null
+                            : () => cubit.save(),
+                        child: Text(
+                          state.saving
+                              ? t('profile.form.saving')
+                              : t('profile.form.save'),
+                        ),
                       ),
                     ),
                   ],

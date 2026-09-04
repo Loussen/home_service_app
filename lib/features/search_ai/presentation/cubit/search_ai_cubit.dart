@@ -38,6 +38,9 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     );
   }
 
+  /// Re-fetch category tree after language change (localized `name` + names).
+  Future<void> reloadCategories() => _loadCategories();
+
   void setCategory(int? id) => emit(state.copyWith(
         selectedCategoryId: id,
         clearCategory: id == null,

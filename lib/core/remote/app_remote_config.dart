@@ -10,7 +10,7 @@ class AppRemoteConfig {
 
   static final AppRemoteConfig instance = AppRemoteConfig._();
 
-  static String _cacheKeyFor(String locale) => 'bootstrap_cache_v3_$locale';
+  static String _cacheKeyFor(String locale) => 'bootstrap_cache_v4_$locale';
 
   BootstrapPayload _payload = BootstrapPayload(
     strings: Map<String, String>.from(_defaultStrings),
@@ -132,9 +132,10 @@ class AppRemoteConfig {
     'tabs.client.search': 'Axtar',
     'tabs.client.requests': 'Sorğularım',
     'tabs.provider.jobs': 'İşlər',
-    'tabs.provider.profiles': 'Profillərim',
+    'tabs.provider.profiles': 'Xidmət',
     'tabs.chat': 'Chat',
     'tabs.profile': 'Profil',
+    'tabs.account': 'Hesab',
     'search.headline': 'Nə axtarırsınız?',
     'search.subtitle':
         'Mikrofonu basıb danışın və ya mətni yazın. AI yaxınlıqdakı peşəkarları tapacaq.',
@@ -175,6 +176,8 @@ class AppRemoteConfig {
         'Xəritə üçün: flutter run --dart-define-from-file=dart_defines.json',
     'search.your_request': 'Sizin sorğunuz',
     'search.filter_category': 'Kateqoriya (istəyə bağlı)',
+    'search.category_search_ph': 'Axtar və ya kateqoriya seç…',
+    'search.category_empty': 'Uyğun kateqoriya yoxdur',
     'search.filter_when': 'Vaxt (istəyə bağlı)',
     'search.pick_datetime': 'Tarix və saat',
     'search.clear_filters': 'Təmizlə',
@@ -234,7 +237,7 @@ class AppRemoteConfig {
     'account.role.provider': 'Xidmət göstərən',
     'account.role.client': 'Ailə / müştəri',
     'account.card.audio_intro': 'Audio intro yazın',
-    'account.card.profiles': 'Profillərim',
+    'account.card.profiles': 'Xidmət',
     'account.card.wallet_bump': 'Pul kisəsi / bump',
     'account.card.voice_search': 'Səsli axtarış',
     'account.card.requests': 'Sorğularım',
@@ -250,6 +253,9 @@ class AppRemoteConfig {
     'account.menu.info': 'Məlumat',
     'account.menu.language': 'Dil',
     'account.menu.logout': 'Çıxış',
+    'account.logout.confirm_title': 'Çıxış',
+    'account.logout.confirm_body': 'Hesabdan çıxmaq istəyirsiniz?',
+    'common.cancel': 'Ləğv et',
     'static_page.load_error': 'Səhifə yüklənmədi',
     'locale.az': 'Azərbaycan',
     'locale.en': 'English',
@@ -289,8 +295,8 @@ class AppRemoteConfig {
         'Yenidən baxışa göndərildi. Admin təsdiqini gözləyin.',
     'account.upload_photo': 'Şəkil yüklə',
     'account.photo_updated': 'Şəkil yeniləndi',
-    'profiles.title': 'Profillərim',
-    'profiles.empty': 'Hələ profil yoxdur.\nYeni profil əlavə edin.',
+    'profiles.title': 'Xidmət profili',
+    'profiles.empty': 'Hələ xidmət profili yoxdur.\nProfil yaradın.',
     'profiles.fallback_name': 'Profil',
     'profiles.status.published': 'PUBLISHED',
     'profiles.status.new': 'NEW',
@@ -472,10 +478,20 @@ class AppRemoteConfig {
     'search.still_processing': 'Emal hələ davam edir — sonra yeniləyin',
     'search.urgent_sent': 'Təcili bildiriş göndərildi. Qalan: {balance} AZN',
     'common.balance_remaining': 'Qalan:',
+    'common.retry': 'Yenidən cəhd et',
+    'error.cache': 'Yerli məlumat oxunmadı',
+    'location.city_label': 'Şəhər',
+    'location.rayon_suffix': '{name} rayonu',
+    'location.address_hint': 'məs. Nərimanov, Gənclik…',
+    'search.fee_total': 'Balansdan çıxılacaq: {amount} AZN',
+    'search.fee_breakdown': 'Axtarış: {base} AZN',
+    'search.fee_breakdown_urgent':
+        'Axtarış: {base} AZN + Təcili: {urgent} AZN',
+    'search.budget_max': '<= {amount} AZN',
+    'wallet.load_failed': 'Pul kisəsi yüklənmədi',
     'error.network':
         'API-yə qoşulmaq mümkün olmadı. Mac və telefon eyni Wi‑Fi-də olmalıdır.',
     'error.generic': 'Xəta baş verdi',
-    'common.retry': 'Yenidən cəhd et',
     'push.new_job.title': 'Sizə uyğun sorğu',
     'push.new_job.body': 'İşlər tabında yeni sorğuya baxın',
     'push.urgent.title': 'Təcili sorğu',

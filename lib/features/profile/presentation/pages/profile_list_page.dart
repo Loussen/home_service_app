@@ -51,9 +51,27 @@ class ProfileListPage extends StatelessWidget {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
-                          child: Text(
-                            t('profiles.empty'),
-                            textAlign: TextAlign.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                t('profiles.empty'),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size(0, 48),
+                                ),
+                                onPressed: () async {
+                                  await context.push('/profiles/new');
+                                  if (context.mounted) {
+                                    context.read<ProfileListCubit>().load();
+                                  }
+                                },
+                                child: Text(t('profile.form.new_title')),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -75,14 +93,20 @@ class ProfileListPage extends StatelessWidget {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            await context.push('/profiles/new');
-            if (context.mounted) {
-              context.read<ProfileListCubit>().load();
-            }
+        floatingActionButton: BlocBuilder<ProfileListCubit, ProfileListState>(
+          builder: (context, state) {
+            // Web ilə eyni: bir xidmətçi = bir profil (əlavə yaratma yox).
+            if (state.profiles.isNotEmpty) return const SizedBox.shrink();
+            return FloatingActionButton(
+              onPressed: () async {
+                await context.push('/profiles/new');
+                if (context.mounted) {
+                  context.read<ProfileListCubit>().load();
+                }
+              },
+              child: const Icon(Icons.add),
+            );
           },
-          child: const Icon(Icons.add),
         ),
         ),
       ),
@@ -104,14 +128,18 @@ class _ProfileCard extends StatelessWidget {
             : t('profiles.fallback_name'));
     final published = profile.isActive;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -333,6 +361,8 @@ class _ProfileCard extends StatelessWidget {
             ),
           ],
         ],
+          ),
+        ),
       ),
     );
   }

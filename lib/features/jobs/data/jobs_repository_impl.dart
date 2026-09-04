@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:home_service_app/core/error/failures.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/jobs/data/jobs_remote_data_source.dart';
 import 'package:home_service_app/features/jobs/data/models/incoming_job_model.dart';
 import 'package:home_service_app/features/jobs/domain/jobs_repository.dart';
@@ -18,7 +19,7 @@ class JobsRepositoryImpl implements JobsRepository {
       final data = e.response?.data;
       final msg = data is Map && data['message'] is String
           ? data['message'] as String
-          : (e.message ?? 'Xəta');
+          : (e.message ?? t('error.generic'));
       return Left(ServerFailure(msg));
     }
   }

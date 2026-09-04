@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:home_service_app/features/auth/presentation/widgets/logout_confirm.dart';
 import 'package:home_service_app/features/auth/presentation/widgets/auth_chrome.dart';
 
 class RolePage extends StatelessWidget {
@@ -67,6 +68,8 @@ class RolePage extends StatelessWidget {
           const SizedBox(height: 24),
           TextButton(
             onPressed: () async {
+              if (!await confirmLogout(context)) return;
+              if (!context.mounted) return;
               await context.read<AuthCubit>().logout();
               if (context.mounted) context.go('/login');
             },

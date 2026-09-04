@@ -161,7 +161,7 @@ class _SearchLocationFieldState extends State<SearchLocationField> {
           enabled: widget.enabled,
           decoration: InputDecoration(
             labelText: t('location.search_address'),
-            hintText: 'məs. Nərimanov, Gənclik…',
+            hintText: t('location.address_hint'),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: _searching
                 ? const Padding(

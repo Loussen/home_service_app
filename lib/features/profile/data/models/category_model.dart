@@ -26,17 +26,27 @@ class CategoryModel {
   bool get isRoot => parentId == null;
   bool get hasChildren => children.isNotEmpty;
 
-  /// Localized label for current app locale (API `name` preferred).
+  /// Localized label for the *current* app locale.
+  /// Prefer `name_en` / `name_ru` / `name_az` over API `name`, which is frozen
+  /// at fetch time and stays wrong after the user switches language.
   String get displayName {
-    if (name != null && name!.trim().isNotEmpty) return name!;
     final locale = AppRemoteConfig.instance.locale;
-    if (locale == 'en' && nameEn != null && nameEn!.trim().isNotEmpty) {
-      return nameEn!;
+    if (locale == 'en') {
+      final en = nameEn?.trim();
+      if (en != null && en.isNotEmpty) return en;
+    } else if (locale == 'ru') {
+      final ru = nameRu?.trim();
+      if (ru != null && ru.isNotEmpty) return ru;
+    } else {
+      final az = nameAz.trim();
+      if (az.isNotEmpty) return az;
     }
-    if (locale == 'ru' && nameRu != null && nameRu!.trim().isNotEmpty) {
-      return nameRu!;
-    }
-    return nameAz;
+    final api = name?.trim();
+    if (api != null && api.isNotEmpty) return api;
+    if (nameAz.trim().isNotEmpty) return nameAz;
+    return nameEn?.trim().isNotEmpty == true
+        ? nameEn!
+        : (nameRu?.trim() ?? '');
   }
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {

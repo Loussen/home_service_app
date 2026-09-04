@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
 import 'package:home_service_app/features/wallet/domain/wallet_repository.dart';
 
@@ -41,17 +42,17 @@ class WalletCubit extends Cubit<WalletState> {
     final tx = await _repo.transactions();
 
     final b = bal.fold((f) => null, (d) => d);
-    final t = tx.fold((f) => <dynamic>[], (d) => d);
+    final txs = tx.fold((f) => <dynamic>[], (d) => d);
 
     if (b == null) {
-      emit(state.copyWith(loading: false, message: 'Failed to load wallet'));
+      emit(state.copyWith(loading: false, message: t('wallet.load_failed')));
       return;
     }
 
     emit(state.copyWith(
       loading: false,
       balance: parseDouble(b['balance']),
-      transactions: t,
+      transactions: txs,
     ));
   }
 }

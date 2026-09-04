@@ -37,14 +37,16 @@ class DependentLocationPicker extends StatelessWidget {
         DropdownButtonFormField<int>(
           value: cityId != null && cityIds.contains(cityId) ? cityId : null,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Şəhər'),
+          decoration: InputDecoration(labelText: t('location.city_label')),
           hint: Text(t('location.city_hint')),
           items: cities
               .map(
                 (c) => DropdownMenuItem(
                   value: c.id,
                   child: Text(
-                    c.type == 'rayon' ? '${c.name} rayonu' : c.name,
+                    c.type == 'rayon'
+                        ? t('location.rayon_suffix', params: {'name': c.name})
+                        : c.name,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

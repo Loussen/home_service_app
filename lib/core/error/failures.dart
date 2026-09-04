@@ -1,3 +1,5 @@
+import 'package:home_service_app/core/remote/app_remote_config.dart';
+
 abstract class Failure {
   const Failure(this.message);
   final String message;
@@ -8,15 +10,14 @@ class ServerFailure extends Failure {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([super.message = 'Network error']);
+  NetworkFailure([String? message]) : super(message ?? t('error.network'));
 }
 
 class CacheFailure extends Failure {
-  const CacheFailure([super.message = 'Cache error']);
+  CacheFailure([String? message]) : super(message ?? t('error.cache'));
 }
 
 class AccountBlockedFailure extends Failure {
-  const AccountBlockedFailure([
-    super.message = 'Sizin profiliniz admin tərəfindən bloklanıb.',
-  ]);
+  AccountBlockedFailure([String? message])
+      : super(message ?? t('web.auth.blocked_body'));
 }

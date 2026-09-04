@@ -123,7 +123,7 @@ class _WorkLocationPickerState extends State<WorkLocationPicker> {
           focusNode: _focus,
           decoration: InputDecoration(
             labelText: t('location.search_address'),
-            hintText: 'məs. Nərimanov, Gənclik…',
+            hintText: t('location.address_hint'),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: _searching
                 ? const Padding(

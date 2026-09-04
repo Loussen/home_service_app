@@ -1,3 +1,5 @@
+import 'package:home_service_app/core/remote/app_remote_config.dart';
+
 class ChatUserModel {
   const ChatUserModel({
     required this.id,
@@ -13,7 +15,7 @@ class ChatUserModel {
 
   String get displayName {
     if (name != null && name!.trim().isNotEmpty) return name!;
-    return 'İstifadəçi';
+    return t('account.user_fallback');
   }
 
   factory ChatUserModel.fromJson(Map<String, dynamic> json) {

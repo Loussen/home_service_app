@@ -23,8 +23,8 @@ class MainTabShell extends StatelessWidget {
         label: isProvider ? t('tabs.provider.jobs') : t('tabs.client.search'),
       ),
       _NavSpec(
-        icon: isProvider ? Icons.layers_outlined : Icons.assignment_outlined,
-        activeIcon: isProvider ? Icons.layers : Icons.assignment,
+        icon: isProvider ? Icons.badge_outlined : Icons.assignment_outlined,
+        activeIcon: isProvider ? Icons.badge : Icons.assignment,
         label: isProvider
             ? t('tabs.provider.profiles')
             : t('tabs.client.requests'),
@@ -37,7 +37,7 @@ class MainTabShell extends StatelessWidget {
       _NavSpec(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
-        label: t('tabs.profile'),
+        label: isProvider ? t('tabs.account') : t('tabs.profile'),
       ),
     ];
 

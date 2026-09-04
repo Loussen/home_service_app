@@ -10,6 +10,7 @@ import 'package:home_service_app/features/auth/data/models/user_model.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+import 'package:home_service_app/features/auth/presentation/widgets/logout_confirm.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AccountPage extends StatelessWidget {
@@ -327,13 +328,7 @@ class AccountPage extends StatelessWidget {
                           color: AppColors.skySoft,
                           icon: Icons.mic_none,
                           title: t('account.card.audio_intro'),
-                          onTap: () => context.push('/profiles/new'),
-                        ),
-                        _PastelCard(
-                          color: AppColors.cream,
-                          icon: Icons.layers_outlined,
-                          title: t('account.card.profiles'),
-                          onTap: () => context.push('/profiles/new'),
+                          onTap: () => context.go('/profiles'),
                         ),
                         _PastelCard(
                           color: AppColors.lavender,
@@ -371,15 +366,15 @@ class AccountPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
+                Material(
+                  color: AppColors.surface,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.divider),
+                    side: const BorderSide(color: AppColors.divider),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  clipBehavior: Clip.antiAlias,
                   child: Column(
-                    children: [
+                      children: [
                       if (user?.isProvider == true)
                         _MenuTile(
                           icon: Icons.shield_outlined,
@@ -471,7 +466,12 @@ class AccountPage extends StatelessWidget {
                       _MenuTile(
                         icon: Icons.logout,
                         label: t('account.menu.logout'),
-                        onTap: () => context.read<AuthCubit>().logout(),
+                        onTap: () async {
+                          if (!await confirmLogout(context)) return;
+                          if (!context.mounted) return;
+                          await context.read<AuthCubit>().logout();
+                          if (context.mounted) context.go('/login');
+                        },
                       ),
                     ],
                   ),

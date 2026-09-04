@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:home_service_app/core/error/failures.dart';
 import 'package:home_service_app/core/network/token_storage.dart';
+import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/auth/data/auth_remote_data_source.dart';
 import 'package:home_service_app/features/auth/data/models/user_model.dart';
 import 'package:home_service_app/features/auth/domain/auth_repository.dart';
@@ -47,14 +48,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final token = await _tokens.readToken();
       if (token == null) {
-        return const Left(CacheFailure('No token'));
+        return Left(CacheFailure('No token'));
       }
       final user = await _remote.me();
       if (user.isBlocked) {
         await _tokens.clear();
         return Left(AccountBlockedFailure(
-          user.profileStatusLabel ??
-              'Sizin profiliniz admin tərəfindən bloklanıb.',
+          user.profileStatusLabel ?? t('web.auth.blocked_body'),
         ));
       }
       return Right(user);
@@ -113,6 +113,9 @@ class AuthRepositoryImpl implements AuthRepository {
     return const Right(unit);
   }
 
+  @override
+  Future<void> clearLocalSession() => _tokens.clear();
+
   bool _isBlocked(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['code'] == 'ACCOUNT_BLOCKED') return true;
@@ -123,8 +126,7 @@ class AuthRepositoryImpl implements AuthRepository {
   String _message(DioException e) {
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout) {
-      return 'API-yə qoşulmaq mümkün olmadı. '
-          'Mac və telefon eyni Wi‑Fi-də olmalıdır.';
+      return t('error.network');
     }
     final data = e.response?.data;
     if (data is Map && data['message'] is String) {

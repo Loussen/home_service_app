@@ -69,7 +69,7 @@ class ApiClient {
               data['code'] == 'ACCOUNT_BLOCKED') {
             final msg = data['message'] is String
                 ? data['message'] as String
-                : 'Sizin profiliniz admin tərəfindən bloklanıb.';
+                : t('web.auth.blocked_body');
             onAccountBlocked?.call(msg);
           }
 
