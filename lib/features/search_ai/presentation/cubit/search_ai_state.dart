@@ -6,6 +6,7 @@ enum SearchPhase {
   idle,
   locating,
   recording,
+  confirmTtl,
   submitting,
   processing,
   results,

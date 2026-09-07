@@ -81,6 +81,8 @@ class BootstrapConfig {
     this.bumpHours = 24,
     this.bumpDailyLimit = 2,
     this.walletPackages = const [10, 30, 50],
+    this.requestTtlDefaultHours = 1,
+    this.requestTtlOptionsHours = const [1, 3, 6],
     this.onboardingSteps = const [],
   });
 
@@ -106,6 +108,12 @@ class BootstrapConfig {
       bumpHours: (json['bump_hours'] as num?)?.toInt() ?? 24,
       bumpDailyLimit: (json['bump_daily_limit'] as num?)?.toInt() ?? 2,
       walletPackages: _numList(json['wallet_packages'], const [10, 30, 50]),
+      requestTtlDefaultHours:
+          (json['request_ttl_default_hours'] as num?)?.toInt() ?? 1,
+      requestTtlOptionsHours: _intList(
+        json['request_ttl_options_hours'],
+        const [1, 3, 6],
+      ),
       onboardingSteps: steps,
     );
   }
@@ -119,6 +127,8 @@ class BootstrapConfig {
   final int bumpHours;
   final int bumpDailyLimit;
   final List<double> walletPackages;
+  final int requestTtlDefaultHours;
+  final List<int> requestTtlOptionsHours;
   final List<BootstrapStep> onboardingSteps;
 
   static List<double> _numList(dynamic raw, List<double> fallback) {
@@ -126,6 +136,16 @@ class BootstrapConfig {
     final parsed = raw
         .map((e) => e is num ? e.toDouble() : double.tryParse('$e'))
         .whereType<double>()
+        .toList();
+    return parsed.isEmpty ? fallback : parsed;
+  }
+
+  static List<int> _intList(dynamic raw, List<int> fallback) {
+    if (raw is! List) return fallback;
+    final parsed = raw
+        .map((e) => e is num ? e.toInt() : int.tryParse('$e'))
+        .whereType<int>()
+        .where((e) => e > 0)
         .toList();
     return parsed.isEmpty ? fallback : parsed;
   }
@@ -254,6 +274,8 @@ class BootstrapPayload {
           'bump_hours': config.bumpHours,
           'bump_daily_limit': config.bumpDailyLimit,
           'wallet_packages': config.walletPackages,
+          'request_ttl_default_hours': config.requestTtlDefaultHours,
+          'request_ttl_options_hours': config.requestTtlOptionsHours,
           'onboarding_steps': config.onboardingSteps
               .map((s) => {'id': s.id, 'title': s.title})
               .toList(),

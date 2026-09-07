@@ -5,13 +5,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/app/config/auth_router_refresh.dart';
+import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/welcome/welcome_intro_storage.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+import 'package:home_service_app/features/auth/presentation/pages/auth_boot_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/login_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/otp_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/provider_onboarding_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/provider_pending_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/role_page.dart';
+import 'package:home_service_app/features/welcome/presentation/pages/welcome_intro_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_thread_page.dart';
 import 'package:home_service_app/features/home/presentation/pages/account_page.dart';
@@ -38,21 +42,43 @@ bool _providerAwaitingApproval(AuthState auth) {
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/login',
+  initialLocation: '/boot',
   refreshListenable: authRouterRefresh,
   redirect: (context, state) {
     final auth = context.read<AuthCubit>().state;
     final loc = state.matchedLocation;
-    final isPublic = loc == '/login' || loc == '/otp';
+    final welcomeSeen = getIt.isRegistered<WelcomeIntroStorage>()
+        ? getIt<WelcomeIntroStorage>().seen
+        : true;
+    final isPublic =
+        loc == '/login' || loc == '/otp' || loc == '/welcome' || loc == '/boot';
 
-    if (auth.status == AuthStatus.unknown) return null;
+    // Session restore in progress — never flash login for returning users.
+    if (auth.status == AuthStatus.unknown) {
+      return loc == '/boot' ? null : '/boot';
+    }
 
     if (auth.status != AuthStatus.authenticated) {
-      // OTP only after sendOtp set pendingPhone — avoid orphan /otp.
+      if (loc == '/boot') {
+        return welcomeSeen ? '/login' : '/welcome';
+      }
       if (loc == '/otp' && (auth.pendingPhone == null || auth.pendingPhone!.isEmpty)) {
         return '/login';
       }
+      if (!welcomeSeen && loc != '/welcome' && loc != '/otp') {
+        return '/welcome';
+      }
+      if (welcomeSeen && loc == '/welcome') return '/login';
       return isPublic ? null : '/login';
+    }
+
+    // Logged in — leave boot / welcome / login / otp.
+    if (loc == '/boot' || loc == '/welcome') {
+      if (AppConfig.forceOnboarding) return '/onboarding';
+      if (auth.user?.needsRole == true || auth.isNewUser) return '/role';
+      if (auth.user?.needsProviderOnboarding == true) return '/onboarding';
+      if (_providerAwaitingApproval(auth)) return '/provider-pending';
+      return '/search';
     }
 
     final needsRole = auth.user?.needsRole == true || auth.isNewUser;
@@ -92,6 +118,14 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(
+      path: '/boot',
+      builder: (_, __) => const AuthBootPage(),
+    ),
+    GoRoute(
+      path: '/welcome',
+      builder: (_, __) => const WelcomeIntroPage(),
+    ),
     GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
     GoRoute(
       path: '/otp',

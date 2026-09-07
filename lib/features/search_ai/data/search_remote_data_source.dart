@@ -21,6 +21,7 @@ class SearchRemoteDataSource {
     bool? hasPet,
     double? budgetMax,
     int? durationSeconds,
+    int? ttlHours,
   }) async {
     final form = FormData.fromMap({
       'audio': await MultipartFile.fromFile(
@@ -39,6 +40,7 @@ class SearchRemoteDataSource {
       if (hasPet != null) 'has_pet': hasPet ? '1' : '0',
       if (budgetMax != null) 'budget_max': budgetMax,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (ttlHours != null) 'ttl_hours': ttlHours,
     });
 
     final res = await _client.dio.post('/service-requests/audio', data: form);
@@ -59,6 +61,7 @@ class SearchRemoteDataSource {
     int? childAge,
     bool? hasPet,
     double? budgetMax,
+    int? ttlHours,
   }) async {
     final res = await _client.dio.post('/service-requests/text', data: {
       'text': text,
@@ -73,6 +76,7 @@ class SearchRemoteDataSource {
       if (childAge != null) 'child_age': childAge,
       if (hasPet != null) 'has_pet': hasPet,
       if (budgetMax != null) 'budget_max': budgetMax,
+      if (ttlHours != null) 'ttl_hours': ttlHours,
     });
     return ServiceRequestModel.fromJson(
       res.data['data'] as Map<String, dynamic>,

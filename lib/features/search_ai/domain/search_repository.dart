@@ -16,6 +16,7 @@ abstract class SearchRepository {
     bool? hasPet,
     double? budgetMax,
     int? durationSeconds,
+    int? ttlHours,
   });
 
   Future<Either<Failure, ServiceRequestModel>> submitText({
@@ -30,6 +31,7 @@ abstract class SearchRepository {
     int? childAge,
     bool? hasPet,
     double? budgetMax,
+    int? ttlHours,
   });
 
   Future<Either<Failure, ServiceRequestModel>> getRequest(int id);

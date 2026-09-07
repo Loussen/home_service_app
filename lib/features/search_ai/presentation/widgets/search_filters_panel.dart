@@ -4,6 +4,7 @@ import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
 import 'package:intl/intl.dart';
 
+/// Manual search filters — category + optional when (no age / pet / budget).
 class SearchFiltersPanel extends StatelessWidget {
   const SearchFiltersPanel({
     super.key,
@@ -12,15 +13,9 @@ class SearchFiltersPanel extends StatelessWidget {
     required this.scheduledAt,
     required this.timeSlot,
     required this.enabled,
-    required this.childAge,
-    required this.hasPet,
-    required this.budgetMax,
     required this.onCategoryChanged,
     required this.onScheduledAtChanged,
     required this.onTimeSlotChanged,
-    required this.onChildAgeChanged,
-    required this.onHasPetChanged,
-    required this.onBudgetMaxChanged,
   });
 
   final List<CategoryModel> categories;
@@ -28,18 +23,11 @@ class SearchFiltersPanel extends StatelessWidget {
   final DateTime? scheduledAt;
   final String? timeSlot;
   final bool enabled;
-  final int? childAge;
-  final bool? hasPet;
-  final double? budgetMax;
   final ValueChanged<int?> onCategoryChanged;
   final ValueChanged<DateTime?> onScheduledAtChanged;
   final ValueChanged<String?> onTimeSlotChanged;
-  final ValueChanged<int?> onChildAgeChanged;
-  final ValueChanged<bool?> onHasPetChanged;
-  final ValueChanged<double?> onBudgetMaxChanged;
 
   static const _slots = ['morning', 'afternoon', 'evening', 'night'];
-  static const _budgetOptions = [20, 40, 60, 100, 150, 250];
 
   String _slotLabel(String slot) => t('search.slot.$slot');
 
@@ -57,7 +45,8 @@ class SearchFiltersPanel extends StatelessWidget {
       initialTime: TimeOfDay.fromDateTime(initial),
     );
     if (time == null || !context.mounted) return;
-    final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final picked =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
     if (!picked.isAfter(DateTime.now())) return;
     onScheduledAtChanged(picked);
     onTimeSlotChanged(null);
@@ -65,8 +54,8 @@ class SearchFiltersPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasLeaves = CategoryModel.flatten(categories)
-        .any((e) => e.$1.children.isEmpty);
+    final hasLeaves =
+        CategoryModel.flatten(categories).any((e) => e.$1.children.isEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +66,8 @@ class SearchFiltersPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         if (!hasLeaves)
-          Text(t('search.filters_loading'), style: const TextStyle(color: AppColors.muted))
+          Text(t('search.filters_loading'),
+              style: const TextStyle(color: AppColors.muted))
         else
           _SearchableCategoryField(
             locale: AppRemoteConfig.instance.locale,
@@ -97,10 +87,17 @@ class SearchFiltersPanel extends StatelessWidget {
           runSpacing: 8,
           children: [
             for (final slot in _slots)
-              _FilterChip(
-                label: _slotLabel(slot),
+              ChoiceChip(
+                label: Text(_slotLabel(slot)),
                 selected: timeSlot == slot && scheduledAt == null,
                 selectedColor: AppColors.skySoft,
+                checkmarkColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: (timeSlot == slot && scheduledAt == null)
+                      ? AppColors.primary
+                      : AppColors.ink,
+                  fontWeight: FontWeight.w700,
+                ),
                 onSelected: enabled
                     ? (selected) {
                         onTimeSlotChanged(selected ? slot : null);
@@ -120,7 +117,8 @@ class SearchFiltersPanel extends StatelessWidget {
                 label: Text(
                   scheduledAt == null
                       ? t('search.pick_datetime')
-                      : DateFormat('d MMM, HH:mm').format(scheduledAt!.toLocal()),
+                      : DateFormat('d MMM, HH:mm')
+                          .format(scheduledAt!.toLocal()),
                 ),
               ),
             ),
@@ -139,128 +137,7 @@ class SearchFiltersPanel extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 16),
-        Text(
-          t('search.filter_more'),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: t('search.child_age'),
-                  border: const OutlineInputBorder(),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    isExpanded: true,
-                    value: childAge,
-                    hint: Text(t('search.not_selected')),
-                    items: List.generate(
-                      18,
-                      (i) => DropdownMenuItem<int>(
-                        value: i,
-                        child: Text('$i'),
-                      ),
-                    ),
-                    onChanged: enabled ? onChildAgeChanged : null,
-                  ),
-                ),
-              ),
-            ),
-            if (childAge != null) ...[
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: t('search.clear_filters'),
-                onPressed: enabled ? () => onChildAgeChanged(null) : null,
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _FilterChip(
-              label: t('search.pet_yes'),
-              selected: hasPet == true,
-              selectedColor: AppColors.peach,
-              onSelected: enabled
-                  ? (selected) => onHasPetChanged(selected ? true : null)
-                  : null,
-            ),
-            _FilterChip(
-              label: t('search.pet_no'),
-              selected: hasPet == false,
-              selectedColor: AppColors.skySoft,
-              onSelected: enabled
-                  ? (selected) => onHasPetChanged(selected ? false : null)
-                  : null,
-            ),
-            if (hasPet != null)
-              ActionChip(
-                label: Text(t('search.clear_filters')),
-                onPressed: enabled ? () => onHasPetChanged(null) : null,
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final budget in _budgetOptions)
-              _FilterChip(
-                label: t('search.budget_max', params: {'amount': '$budget'}),
-                selected: budgetMax?.round() == budget,
-                selectedColor: AppColors.cream,
-                onSelected: enabled
-                    ? (selected) =>
-                        onBudgetMaxChanged(selected ? budget.toDouble() : null)
-                    : null,
-              ),
-            if (budgetMax != null)
-              ActionChip(
-                label: Text(t('search.clear_filters')),
-                onPressed: enabled ? () => onBudgetMaxChanged(null) : null,
-              ),
-          ],
-        ),
       ],
-    );
-  }
-}
-
-/// Soft selected surface + navy label (readable on peach / mist).
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.selectedColor,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final Color selectedColor;
-  final ValueChanged<bool>? onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      selectedColor: selectedColor,
-      checkmarkColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: selected ? AppColors.primary : AppColors.ink,
-        fontWeight: FontWeight.w700,
-      ),
-      onSelected: onSelected,
     );
   }
 }
@@ -291,7 +168,6 @@ class _CategoryGroup {
   final List<_CategoryLeaf> leaves;
 }
 
-/// Build parent → leaf groups (same walk as web `fillRequestCategorySelect`).
 List<_CategoryGroup> _buildCategoryGroups(List<CategoryModel> tree) {
   final order = <String>[];
   final map = <String, List<_CategoryLeaf>>{};
@@ -343,7 +219,6 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
   bool _menuOpen = false;
-  /// Immediate pick so blur (before parent rebuild) does not clear the field.
   int? _localSelectedId;
   String? _localSelectedName;
   bool _picking = false;
@@ -364,8 +239,7 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
     return null;
   }
 
-  String get _displayName =>
-      _selected?.name ?? _localSelectedName ?? '';
+  String get _displayName => _selected?.name ?? _localSelectedName ?? '';
 
   List<_CategoryGroup> get _filtered {
     final q = _controller.text.trim().toLowerCase();
@@ -390,15 +264,11 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
       setState(() => _menuOpen = true);
       return;
     }
-    // Defer close so option pointer-down can commit first (web mousedown pattern).
     Future.microtask(() {
-      if (!mounted || _focus.hasFocus) return;
-      if (_picking) return;
+      if (!mounted || _focus.hasFocus || _picking) return;
       setState(() => _menuOpen = false);
       final name = _displayName;
-      if (_controller.text != name) {
-        _controller.text = name;
-      }
+      if (_controller.text != name) _controller.text = name;
     });
   }
 
@@ -412,9 +282,7 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
     }
     if (oldWidget.selectedCategoryId != widget.selectedCategoryId ||
         oldWidget.locale != widget.locale) {
-      if (!_focus.hasFocus) {
-        _controller.text = _displayName;
-      }
+      if (!_focus.hasFocus) _controller.text = _displayName;
     }
   }
 
@@ -529,10 +397,55 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
                               ),
                             ),
                             for (final leaf in group.leaves)
-                              _CategoryOptionTile(
-                                label: leaf.name,
-                                selected: leaf.category.id == selectedId,
-                                onSelect: () => _pick(leaf),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Material(
+                                  color: leaf.category.id == selectedId
+                                      ? AppColors.peach
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Listener(
+                                    onPointerDown: (_) => _pick(leaf),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      focusNode: FocusNode(
+                                        skipTraversal: true,
+                                        canRequestFocus: false,
+                                      ),
+                                      onTap: () {},
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 11,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                leaf.name,
+                                                style: TextStyle(
+                                                  color: AppColors.primary,
+                                                  fontWeight:
+                                                      leaf.category.id ==
+                                                              selectedId
+                                                          ? FontWeight.w800
+                                                          : FontWeight.w600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            if (leaf.category.id == selectedId)
+                                              const Icon(
+                                                Icons.check,
+                                                color: AppColors.primary,
+                                                size: 18,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                           ],
                         );
@@ -542,58 +455,6 @@ class _SearchableCategoryFieldState extends State<_SearchableCategoryField> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _CategoryOptionTile extends StatelessWidget {
-  const _CategoryOptionTile({
-    required this.label,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Material(
-        color: selected ? AppColors.peach : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: Listener(
-          // Commit before TextField blurs and unmounts the menu.
-          onPointerDown: (_) => onSelect(),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            focusNode: FocusNode(skipTraversal: true, canRequestFocus: false),
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight:
-                            selected ? FontWeight.w800 : FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  if (selected)
-                    const Icon(Icons.check, color: AppColors.primary, size: 18),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

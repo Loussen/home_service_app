@@ -38,37 +38,46 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> bootstrap() async {
-    final result = await _repo.bootstrap();
-    if (isClosed) return;
-    // User already started OTP while /me was in flight — don't restore over it.
-    if (state.pendingPhone != null && state.pendingPhone!.isNotEmpty) return;
+    try {
+      final result = await _repo.bootstrap().timeout(
+        const Duration(seconds: 15),
+      );
+      if (isClosed) return;
+      // User already started OTP while /me was in flight — don't restore over it.
+      if (state.pendingPhone != null && state.pendingPhone!.isNotEmpty) return;
 
-    result.fold(
-      (f) {
-        if (f is AccountBlockedFailure) {
-          emit(AuthState(
-            status: AuthStatus.unauthenticated,
-            message: f.message,
-            accountBlocked: true,
-          ));
-        } else {
+      result.fold(
+        (f) {
+          if (f is AccountBlockedFailure) {
+            emit(AuthState(
+              status: AuthStatus.unauthenticated,
+              message: f.message,
+              accountBlocked: true,
+            ));
+            return;
+          }
           emit(const AuthState(status: AuthStatus.unauthenticated));
-        }
-      },
-      (user) {
-        if (state.pendingPhone != null && state.pendingPhone!.isNotEmpty) {
-          return;
-        }
-        if (user.isBlocked) {
-          handleAccountBlocked(
-            user.profileStatusLabel ?? t('web.auth.blocked_body'),
-          );
-          return;
-        }
-        emit(AuthState(status: AuthStatus.authenticated, user: user));
-        unawaited(_push.register());
-      },
-    );
+        },
+        (user) {
+          if (state.pendingPhone != null && state.pendingPhone!.isNotEmpty) {
+            return;
+          }
+          if (user.isBlocked) {
+            handleAccountBlocked(
+              user.profileStatusLabel ?? t('web.auth.blocked_body'),
+            );
+            return;
+          }
+          emit(AuthState(status: AuthStatus.authenticated, user: user));
+          unawaited(_push.register());
+        },
+      );
+    } catch (_) {
+      if (isClosed) return;
+      if (state.pendingPhone != null && state.pendingPhone!.isNotEmpty) return;
+      // Never leave the UI on /boot forever.
+      emit(const AuthState(status: AuthStatus.unauthenticated));
+    }
   }
 
   Future<bool> sendOtp(String phone) async {

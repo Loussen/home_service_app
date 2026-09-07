@@ -141,26 +141,61 @@ class SearchAiCubit extends Cubit<SearchAiState> {
     _recordTimer?.cancel();
     final seconds = state.recordSeconds;
     final path = await _recorder.stop();
-    emit(state.copyWith(
-      isRecording: false,
-      phase: SearchPhase.idle,
-      localAudioPath: path,
-      recordSeconds: 0,
-    ));
-    if (path == null) return;
-    if (seconds < 5) {
+    if (path == null) {
       emit(state.copyWith(
-        phase: SearchPhase.error,
-        message: t('web.request.voice_too_short', params: {'sec': '5'}),
+        isRecording: false,
+        phase: SearchPhase.idle,
+        recordSeconds: 0,
         clearAudio: true,
       ));
       return;
     }
-    _lastAudioSeconds = seconds.clamp(5, 20);
-    await submit();
+    if (seconds < 3) {
+      emit(state.copyWith(
+        isRecording: false,
+        phase: SearchPhase.error,
+        message: t('web.request.voice_too_short', params: {'sec': '3'}),
+        recordSeconds: 0,
+        clearAudio: true,
+      ));
+      return;
+    }
+    _lastAudioSeconds = seconds.clamp(3, 20);
+    emit(state.copyWith(
+      isRecording: false,
+      phase: SearchPhase.confirmTtl,
+      localAudioPath: path,
+      recordSeconds: 0,
+      clearMessage: true,
+    ));
   }
 
-  Future<void> submit() async {
+  /// Ask UI to pick TTL, then call [submit] with hours.
+  Future<void> requestSubmit() async {
+    final hasAudio = state.localAudioPath != null;
+    final hasText = state.text.trim().isNotEmpty;
+    final hasCategory = state.selectedCategoryId != null;
+
+    if (!hasAudio && !hasText && !hasCategory) {
+      emit(state.copyWith(
+        phase: SearchPhase.error,
+        message: t('search.input_required'),
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      phase: SearchPhase.confirmTtl,
+      clearMessage: true,
+    ));
+  }
+
+  void cancelTtlConfirm() {
+    if (state.phase != SearchPhase.confirmTtl) return;
+    emit(state.copyWith(phase: SearchPhase.idle));
+  }
+
+  Future<void> submit({required int ttlHours}) async {
     final hasAudio = state.localAudioPath != null;
     var text = state.text.trim();
     final hasText = text.isNotEmpty;
@@ -203,6 +238,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             hasPet: state.hasPet,
             budgetMax: state.budgetMax,
             durationSeconds: _lastAudioSeconds > 0 ? _lastAudioSeconds : null,
+            ttlHours: ttlHours,
           )
         : await _repo.submitText(
             text: text,
@@ -216,6 +252,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
             childAge: state.childAge,
             hasPet: state.hasPet,
             budgetMax: state.budgetMax,
+            ttlHours: ttlHours,
           );
 
     await result.fold(

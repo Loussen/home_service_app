@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -66,7 +68,14 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<AuthCubit>()..bootstrap(),
+      create: (_) {
+        final cubit = getIt<AuthCubit>();
+        // After first frame so GoRouter is listening before session restore emits.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(cubit.bootstrap());
+        });
+        return cubit;
+      },
       child: ValueListenableBuilder<String>(
         valueListenable: appLocaleNotifier,
         builder: (context, localeCode, _) {

@@ -8,6 +8,7 @@ import 'package:home_service_app/core/remote/app_locale_service.dart';
 import 'package:home_service_app/features/profile/data/places_client.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/remote/bootstrap_remote_data_source.dart';
+import 'package:home_service_app/core/welcome/welcome_intro_storage.dart';
 import 'package:home_service_app/features/auth/data/auth_remote_data_source.dart';
 import 'package:home_service_app/features/auth/data/auth_repository_impl.dart';
 import 'package:home_service_app/features/auth/domain/auth_repository.dart';
@@ -48,11 +49,12 @@ final getIt = GetIt.instance;
 
 Future<void> configureDependencies() async {
   final prefs = await SharedPreferences.getInstance();
-  final tokenStorage = TokenStorage();
+  final tokenStorage = TokenStorage(prefs);
 
   getIt
     ..registerSingleton(prefs)
     ..registerSingleton(tokenStorage)
+    ..registerSingleton(WelcomeIntroStorage(prefs)..load())
     ..registerSingleton(ApiClient(tokenStorage))
     ..registerLazySingleton(() => DeviceTokenRemote(getIt<ApiClient>()))
     ..registerLazySingleton(() => PushService(getIt<DeviceTokenRemote>()))

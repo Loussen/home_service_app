@@ -15,6 +15,8 @@ import 'package:home_service_app/features/search_ai/presentation/widgets/match_c
 import 'package:home_service_app/features/search_ai/presentation/widgets/matches_map.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_location_field.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_filters_panel.dart';
+import 'package:home_service_app/features/search_ai/presentation/widgets/search_voice_prompt_player.dart';
+import 'package:home_service_app/features/search_ai/presentation/widgets/request_ttl_confirm.dart';
 
 class SearchAiPage extends StatelessWidget {
   const SearchAiPage({super.key});
@@ -36,24 +38,124 @@ class _SearchAiView extends StatefulWidget {
 }
 
 class _SearchAiViewState extends State<_SearchAiView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _textCtrl = TextEditingController();
+  final _prompts = SearchVoicePromptPlayer();
+  late final TabController _tabs;
   late final AnimationController _micPulse;
+  late final AnimationController _logoPulse;
+  bool _greetingPlaying = false;
+  bool _greetingDone = false;
+  bool _acceptedPlayedForSubmit = false;
+  SearchPhase? _lastPhase;
+  bool _ttlDialogOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _tabs = TabController(length: 2, vsync: this);
     _micPulse = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
+    );
+    _logoPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+    _tabs.addListener(_onTabChanged);
+    // Small delay so route transition + audio session settle after boot → search.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(milliseconds: 350), () {
+        if (mounted) _maybePlayGreeting();
+      });
+    });
+  }
+
+  void _onTabChanged() {
+    if (_tabs.indexIsChanging) return;
+    if (_tabs.index != 0 && _greetingPlaying) {
+      _prompts.stop();
+      _logoPulse
+        ..stop()
+        ..value = 0;
+      setState(() {
+        _greetingPlaying = false;
+        _greetingDone = true;
+      });
+    }
+  }
+
+  Future<void> _maybePlayGreeting() async {
+    if (!mounted || _greetingDone || _greetingPlaying) return;
+    if (!AppRemoteConfig.instance.flags.voiceSearch) {
+      setState(() => _greetingDone = true);
+      return;
+    }
+    await _prompts.playGreeting(
+      onStart: () {
+        if (!mounted) return;
+        setState(() => _greetingPlaying = true);
+        _logoPulse.repeat(reverse: true);
+      },
+      onDone: () {
+        if (!mounted) return;
+        _logoPulse
+          ..stop()
+          ..value = 0;
+        setState(() {
+          _greetingPlaying = false;
+          _greetingDone = true;
+        });
+      },
+    );
+  }
+
+  Future<void> _maybePlayAccepted(SearchAiState state) async {
+    final startedSubmit = state.phase == SearchPhase.submitting &&
+        state.localAudioPath != null &&
+        _lastPhase != SearchPhase.submitting;
+    _lastPhase = state.phase;
+    if (!startedSubmit || _acceptedPlayedForSubmit) return;
+    _acceptedPlayedForSubmit = true;
+    await _prompts.playAccepted(
+      onStart: () {
+        if (!mounted) return;
+        setState(() => _greetingPlaying = true);
+        _logoPulse.repeat(reverse: true);
+      },
+      onDone: () {
+        if (!mounted) return;
+        _logoPulse
+          ..stop()
+          ..value = 0;
+        setState(() => _greetingPlaying = false);
+      },
     );
   }
 
   @override
   void dispose() {
+    _tabs.removeListener(_onTabChanged);
+    _tabs.dispose();
     _micPulse.dispose();
+    _logoPulse.dispose();
     _textCtrl.dispose();
+    _prompts.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeConfirmTtl(BuildContext context, SearchAiState state) async {
+    if (state.phase != SearchPhase.confirmTtl || _ttlDialogOpen) return;
+    _ttlDialogOpen = true;
+    final hours = await confirmRequestTtl(context);
+    if (!mounted) return;
+    _ttlDialogOpen = false;
+    final cubit = context.read<SearchAiCubit>();
+    if (hours == null) {
+      cubit.cancelTtlConfirm();
+      return;
+    }
+    await cubit.submit(ttlHours: hours);
   }
 
   @override
@@ -68,12 +170,20 @@ class _SearchAiViewState extends State<_SearchAiView>
             context.read<AuthCubit>().bootstrap();
           }
         }
+        if (state.phase == SearchPhase.idle ||
+            state.phase == SearchPhase.results ||
+            state.phase == SearchPhase.error) {
+          _acceptedPlayedForSubmit = false;
+        }
+        _maybePlayAccepted(state);
+        _maybeConfirmTtl(context, state);
       },
       builder: (context, state) {
         final cubit = context.read<SearchAiCubit>();
         final busy = state.phase == SearchPhase.submitting ||
             state.phase == SearchPhase.processing ||
-            state.phase == SearchPhase.locating;
+            state.phase == SearchPhase.locating ||
+            state.phase == SearchPhase.confirmTtl;
 
         final remote = AppRemoteConfig.instance;
         final urgentFee = remote.config.fees.urgent;
@@ -81,7 +191,8 @@ class _SearchAiViewState extends State<_SearchAiView>
         final urgentQuota = context.watch<AuthCubit>().state.user?.urgentQuota;
         final canUrgent = urgentQuota?.canUrgent ?? true;
         final urgentKm =
-            (urgentQuota?.radiusKm ?? remote.config.urgentRadiusKm).toStringAsFixed(0);
+            (urgentQuota?.radiusKm ?? remote.config.urgentRadiusKm)
+                .toStringAsFixed(0);
         final urgentHours =
             '${urgentQuota?.hours ?? remote.config.urgentHours}';
         final urgentRemaining =
@@ -113,203 +224,480 @@ class _SearchAiViewState extends State<_SearchAiView>
                   onUrgent: cubit.markUrgent,
                   onRefresh: () => cubit.refreshRequest(state.request!.id),
                 )
-              : ListView(
-                  padding: const EdgeInsets.all(20),
+              : Column(
                   children: [
-                    Text(
-                      t('search.headline'),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t('search.subtitle'),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.muted,
-                          ),
-                    ),
-                    if (voiceEnabled) ...[
-                      const SizedBox(height: 28),
-                      Center(
-                        child: GestureDetector(
-                          onTap: busy ? null : cubit.toggleRecording,
-                          child: AnimatedBuilder(
-                            animation: _micPulse,
-                            builder: (context, _) {
-                              final pulse = state.isRecording
-                                  ? 0.35 + (_micPulse.value * 0.35)
-                                  : 0.28;
-                              final ring = state.isRecording
-                                  ? 8.0 + (_micPulse.value * 10)
-                                  : 0.0;
-                              return Container(
-                                width: 156,
-                                height: 156,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: (state.isRecording
-                                              ? AppColors.badge
-                                              : AppColors.primary)
-                                          .withValues(alpha: pulse),
-                                      blurRadius: 28 + ring,
-                                      spreadRadius: 2 + ring * 0.3,
-                                    ),
-                                  ],
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: state.isRecording
-                                          ? [
-                                              const Color(0xFFD45A4A),
-                                              AppColors.primaryDark,
-                                            ]
-                                          : [
-                                              AppColors.primary,
-                                              AppColors.primaryDark,
-                                            ],
-                                    ),
-                                    border: Border.all(
-                                      color: AppColors.gold.withValues(
-                                        alpha: state.isRecording ? 0.55 : 0.35,
-                                      ),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    state.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                                    size: 52,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Center(
-                        child: Text(
-                          state.isRecording
-                              ? t('search.recording',
-                                  params: {'seconds': '${state.recordSeconds}'})
-                              : state.localAudioPath != null
-                                  ? t('search.audio_ready')
-                                  : t('search.tap_mic'),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Expanded(child: Divider()),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              t('search.or_text'),
-                              style: Theme.of(context).textTheme.bodySmall,
+                          Text(
+                            t('search.headline'),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            t('search.subtitle'),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.muted),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.mist,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: TabBar(
+                              controller: _tabs,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              dividerColor: Colors.transparent,
+                              indicator: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.divider),
+                              ),
+                              labelColor: AppColors.primary,
+                              unselectedLabelColor: AppColors.muted,
+                              labelStyle: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                              tabs: [
+                                Tab(text: t('search.tab.voice')),
+                                Tab(text: t('search.tab.manual')),
+                              ],
                             ),
                           ),
-                          const Expanded(child: Divider()),
                         ],
                       ),
-                    ],
-                    if (!voiceEnabled) const SizedBox(height: 20),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _textCtrl,
-                      minLines: 2,
-                      maxLines: 4,
-                      enabled: !busy && !state.isRecording,
-                      decoration: InputDecoration(
-                        hintText: t('search.text_hint'),
-                      ),
-                      onChanged: cubit.setText,
                     ),
-                    const SizedBox(height: 12),
-                    SearchFiltersPanel(
-                      categories: state.categories,
-                      selectedCategoryId: state.selectedCategoryId,
-                      scheduledAt: state.scheduledAt,
-                      timeSlot: state.timeSlot,
-                      enabled: !busy && !state.isRecording,
-                      childAge: state.childAge,
-                      hasPet: state.hasPet,
-                      budgetMax: state.budgetMax,
-                      onCategoryChanged: cubit.setCategory,
-                      onScheduledAtChanged: cubit.setScheduledAt,
-                      onTimeSlotChanged: cubit.setTimeSlot,
-                      onChildAgeChanged: cubit.setChildAge,
-                      onHasPetChanged: cubit.setHasPet,
-                      onBudgetMaxChanged: cubit.setBudgetMax,
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      activeThumbColor: AppColors.primary,
-                      title: Text(t('search.urgent_title')),
-                      subtitle: Text(
-                        t(
-                          canUrgent
-                              ? 'search.urgent_subtitle'
-                              : 'search.urgent_limit',
-                          params: {
-                            'fee': urgentFee.toStringAsFixed(0),
-                            'km': urgentKm,
-                            'hours': urgentHours,
-                            'count': urgentRemaining,
-                          },
-                        ),
-                      ),
-                      value: canUrgent && state.isUrgent,
-                      onChanged: busy || !canUrgent ? null : cubit.setUrgent,
-                    ),
-                    const SizedBox(height: 8),
-                    SearchLocationField(
-                      latitude: state.latitude,
-                      longitude: state.longitude,
-                      address: state.address,
-                      enabled: !busy && !state.isRecording,
-                      onChanged: cubit.setLocation,
-                    ),
-                    const SizedBox(height: 12),
-                    _SubmitChargeInfo(
-                      user: context.watch<AuthCubit>().state.user,
-                      isUrgent: canUrgent && state.isUrgent,
-                      fallbackUrgentFee: urgentFee,
-                    ),
-                    const SizedBox(height: 16),
-                    if (state.phase == SearchPhase.submitting ||
-                        state.phase == SearchPhase.processing)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Column(
-                          children: [
-                            const LinearProgressIndicator(),
-                            const SizedBox(height: 8),
-                            Text(t('search.processing')),
-                          ],
-                        ),
-                      ),
-                    ElevatedButton(
-                      onPressed: busy || state.isRecording
-                          ? null
-                          : () {
-                              if (!canUrgent) cubit.setUrgent(false);
-                              cubit.submit();
-                            },
-                      child: Text(
-                        busy ? t('search.submitting') : t('search.submit'),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabs,
+                        children: [
+                          _VoiceSearchTab(
+                            state: state,
+                            busy: busy,
+                            voiceEnabled: voiceEnabled,
+                            greetingPlaying: _greetingPlaying,
+                            greetingDone: _greetingDone,
+                            micPulse: _micPulse,
+                            logoPulse: _logoPulse,
+                            canRecord: !_greetingPlaying &&
+                                _greetingDone &&
+                                !busy,
+                            onToggleRecord: cubit.toggleRecording,
+                          ),
+                          _ManualSearchTab(
+                            state: state,
+                            busy: busy,
+                            textCtrl: _textCtrl,
+                            cubit: cubit,
+                            canUrgent: canUrgent,
+                            urgentFee: urgentFee,
+                            urgentKm: urgentKm,
+                            urgentHours: urgentHours,
+                            urgentRemaining: urgentRemaining,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
         );
       },
+    );
+  }
+}
+
+class _VoiceSearchTab extends StatelessWidget {
+  const _VoiceSearchTab({
+    required this.state,
+    required this.busy,
+    required this.voiceEnabled,
+    required this.greetingPlaying,
+    required this.greetingDone,
+    required this.micPulse,
+    required this.logoPulse,
+    required this.canRecord,
+    required this.onToggleRecord,
+  });
+
+  final SearchAiState state;
+  final bool busy;
+  final bool voiceEnabled;
+  final bool greetingPlaying;
+  final bool greetingDone;
+  final AnimationController micPulse;
+  final AnimationController logoPulse;
+  final bool canRecord;
+  final VoidCallback onToggleRecord;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!voiceEnabled) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            t('search.voice_disabled'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted),
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+      children: [
+        if (busy &&
+            !state.isRecording &&
+            state.phase != SearchPhase.confirmTtl) ...[
+          _SearchBusyPanel(
+            uploading: state.phase == SearchPhase.submitting &&
+                state.localAudioPath != null,
+            processing: state.phase == SearchPhase.processing,
+          ),
+          if (greetingPlaying) ...[
+            const SizedBox(height: 20),
+            _SpeakingLogo(pulse: logoPulse),
+          ],
+        ] else if (greetingPlaying || !greetingDone) ...[
+          _SpeakingLogo(pulse: logoPulse),
+          const SizedBox(height: 18),
+          Text(
+            greetingPlaying
+                ? t('search.voice_greeting_playing')
+                : t('search.voice_greeting_loading'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t('search.voice_greeting_hint'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, height: 1.4),
+          ),
+        ] else ...[
+          Center(
+            child: GestureDetector(
+              onTap: canRecord ? onToggleRecord : null,
+              child: AnimatedBuilder(
+                animation: micPulse,
+                builder: (context, _) {
+                  final pulse = state.isRecording
+                      ? 0.35 + (micPulse.value * 0.35)
+                      : 0.28;
+                  final ring =
+                      state.isRecording ? 8.0 + (micPulse.value * 10) : 0.0;
+                  return Container(
+                    width: 156,
+                    height: 156,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (state.isRecording
+                                  ? AppColors.badge
+                                  : AppColors.primary)
+                              .withValues(alpha: pulse),
+                          blurRadius: 28 + ring,
+                          spreadRadius: 2 + ring * 0.3,
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: state.isRecording
+                              ? [
+                                  const Color(0xFFD45A4A),
+                                  AppColors.primaryDark,
+                                ]
+                              : [
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
+                                ],
+                        ),
+                        border: Border.all(
+                          color: AppColors.gold.withValues(
+                            alpha: state.isRecording ? 0.55 : 0.35,
+                          ),
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        state.isRecording
+                            ? Icons.stop_rounded
+                            : Icons.mic_rounded,
+                        size: 52,
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Center(
+            child: Text(
+              state.isRecording
+                  ? t('search.recording',
+                      params: {'seconds': '${state.recordSeconds}'})
+                  : state.localAudioPath != null
+                      ? t('search.audio_ready')
+                      : t('search.tap_mic'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            t('search.voice_tab_hint'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, height: 1.4),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SpeakingLogo extends StatelessWidget {
+  const _SpeakingLogo({required this.pulse});
+
+  final AnimationController pulse;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AnimatedBuilder(
+        animation: pulse,
+        builder: (context, _) {
+          final scale = 1.0 + (pulse.value * 0.06);
+          final glow = 0.12 + (pulse.value * 0.16);
+          return Transform.scale(
+            scale: scale,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.secondary.withValues(alpha: glow),
+                    blurRadius: 28,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.asset(
+                  'assets/brand/logo-color.jpg',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ManualSearchTab extends StatelessWidget {
+  const _ManualSearchTab({
+    required this.state,
+    required this.busy,
+    required this.textCtrl,
+    required this.cubit,
+    required this.canUrgent,
+    required this.urgentFee,
+    required this.urgentKm,
+    required this.urgentHours,
+    required this.urgentRemaining,
+  });
+
+  final SearchAiState state;
+  final bool busy;
+  final TextEditingController textCtrl;
+  final SearchAiCubit cubit;
+  final bool canUrgent;
+  final double urgentFee;
+  final String urgentKm;
+  final String urgentHours;
+  final String urgentRemaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      children: [
+        if (busy) ...[
+          _SearchBusyPanel(
+            uploading: false,
+            processing: state.phase == SearchPhase.processing,
+          ),
+          const SizedBox(height: 16),
+        ],
+        TextField(
+          controller: textCtrl,
+          minLines: 2,
+          maxLines: 4,
+          enabled: !busy,
+          decoration: InputDecoration(
+            hintText: t('search.text_hint'),
+          ),
+          onChanged: cubit.setText,
+        ),
+        const SizedBox(height: 12),
+        SearchFiltersPanel(
+          categories: state.categories,
+          selectedCategoryId: state.selectedCategoryId,
+          scheduledAt: state.scheduledAt,
+          timeSlot: state.timeSlot,
+          enabled: !busy,
+          onCategoryChanged: cubit.setCategory,
+          onScheduledAtChanged: cubit.setScheduledAt,
+          onTimeSlotChanged: cubit.setTimeSlot,
+        ),
+        const SizedBox(height: 12),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          activeThumbColor: AppColors.primary,
+          title: Text(t('search.urgent_title')),
+          subtitle: Text(
+            t(
+              canUrgent ? 'search.urgent_subtitle' : 'search.urgent_limit',
+              params: {
+                'fee': urgentFee.toStringAsFixed(0),
+                'km': urgentKm,
+                'hours': urgentHours,
+                'count': urgentRemaining,
+              },
+            ),
+          ),
+          value: canUrgent && state.isUrgent,
+          onChanged: busy || !canUrgent ? null : cubit.setUrgent,
+        ),
+        const SizedBox(height: 8),
+        SearchLocationField(
+          latitude: state.latitude,
+          longitude: state.longitude,
+          address: state.address,
+          enabled: !busy,
+          onChanged: cubit.setLocation,
+        ),
+        const SizedBox(height: 12),
+        _SubmitChargeInfo(
+          user: context.watch<AuthCubit>().state.user,
+          isUrgent: canUrgent && state.isUrgent,
+          fallbackUrgentFee: urgentFee,
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: busy
+              ? null
+              : () {
+                  if (!canUrgent) cubit.setUrgent(false);
+                  cubit.requestSubmit();
+                },
+          child: Text(
+            busy ? t('search.submitting') : t('search.submit'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SearchBusyPanel extends StatelessWidget {
+  const _SearchBusyPanel({
+    required this.uploading,
+    required this.processing,
+  });
+
+  final bool uploading;
+  final bool processing;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = uploading
+        ? t('search.voice_uploading')
+        : processing
+            ? t('search.processing')
+            : t('search.submitting');
+    final hint = uploading
+        ? t('search.voice_uploading_hint')
+        : t('search.processing_hint');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CircularProgressIndicator(
+              strokeWidth: 3.5,
+              color: AppColors.primary,
+              backgroundColor: AppColors.mist,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.muted,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const ClipRRect(
+            borderRadius: BorderRadius.all(Radius.circular(99)),
+            child: LinearProgressIndicator(
+              minHeight: 4,
+              color: AppColors.secondary,
+              backgroundColor: AppColors.peach,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -77,6 +77,14 @@ class AppRemoteConfig {
         maxCategoryTags: remote.config.maxCategoryTags,
         fees: remote.config.fees,
         searchRadiusKm: remote.config.searchRadiusKm,
+        urgentRadiusKm: remote.config.urgentRadiusKm,
+        urgentDailyLimit: remote.config.urgentDailyLimit,
+        urgentHours: remote.config.urgentHours,
+        bumpHours: remote.config.bumpHours,
+        bumpDailyLimit: remote.config.bumpDailyLimit,
+        walletPackages: remote.config.walletPackages,
+        requestTtlDefaultHours: remote.config.requestTtlDefaultHours,
+        requestTtlOptionsHours: remote.config.requestTtlOptionsHours,
         onboardingSteps: steps,
       ),
       flags: remote.flags,
@@ -153,6 +161,9 @@ class AppRemoteConfig {
     'search.processing': 'AI emal edir və match edir…',
     'search.submit': 'Axtar',
     'search.submitting': 'Göndərilir…',
+    'search.voice_uploading': 'Səs yüklənir…',
+    'search.voice_uploading_hint': 'Bir az gözləyin — sorğu göndərilir.',
+    'search.processing_hint': 'AI sizi dinləyir və uyğun icraçıları axtarır.',
     'search.new_request': 'Yeni sorğu',
     'search.no_matches':
         'Uyğun icraçı tapılmadı.\nRadiusu genişləndirin və ya digər vaxt seçin.',
@@ -205,6 +216,21 @@ class AppRemoteConfig {
         'Yalnız konkret xidmət seçin (maks. {max}). Üst kateqoriya seçilmir.',
     'category.search_tap': 'Axtar və toxunun',
     'category.min_one': 'Ən azı bir kateqoriya seçin (maks. {max})',
+    'welcome.skip': 'Keç',
+    'welcome.next': 'Davam et',
+    'welcome.start': 'Başla',
+    'welcome.step1.title': 'My Sancho-ya xoş gəlmisiniz',
+    'welcome.step1.body':
+        'Ailə və ev xidmətləri bir yerdə — dayə, təmizlik, baxıcı və daha çoxu yaxınlığınızda.',
+    'welcome.step2.title': 'Səsli sorğu',
+    'welcome.step2.body':
+        'Mikrofonu basıb ehtiyacınızı deyin. AI kateqoriya, vaxt və məkanı anlayır — yazmaq da olar.',
+    'welcome.step3.title': 'Uyğun icraçılar',
+    'welcome.step3.body':
+        'Yaxınlıqdakı peşəkarlar süzülür: məsafə, cədvəl və kateqoriya nəzərə alınır.',
+    'welcome.step4.title': 'CONNECT və razılaşın',
+    'welcome.step4.body':
+        'Seçdiyiniz icraçı ilə chatda yazışın, təklif göndərin və işi təsdiqləyin.',
     'onboarding.step.name': 'Sizi necə çağıraq?',
     'onboarding.step.categories': 'Nə xidmət göstərirsiniz?',
     'onboarding.step.location': 'Harada işləyirsiniz?',
@@ -271,7 +297,7 @@ class AppRemoteConfig {
     'web.request.voice_too_short':
         'Səs çox qısa və ya qeyri-müəyyəndir. Ən azı {sec} saniyə aydın danışın.',
     'web.request.voice_unclear':
-        'Səs oxunmadı və ya qeyri-müəyyəndir. Nümunəyə bənzər aydın səs göndərin (5–20 san).',
+        'Səs oxunmadı və ya qeyri-müəyyəndir. Nümunəyə bənzər aydın səs göndərin (3–20 san).',
     'provider.approval.pending_title': 'Təsdiq gözlənilir',
     'provider.approval.pending':
         'Sorğunuz 1 saat ərzində baxılacaq. Təsdiqləndikdən sonra iş sorğuları gələcək.',
@@ -476,6 +502,12 @@ class AppRemoteConfig {
     'search.mic_required': 'Mikrofon icazəsi lazımdır',
     'search.input_required': 'Səs yazın və ya mətni daxil edin',
     'search.still_processing': 'Emal hələ davam edir — sonra yeniləyin',
+    'search.ttl.title': 'Sorğu nə qədər açıq qalsın?',
+    'search.ttl.body':
+        'Bu müddətdən sonra yeni əlaqə və cavab bağlanır. İstədiyinizi seçib təsdiqləyin.',
+    'search.ttl.hours': '{hours} saat',
+    'search.ttl.default_badge': 'Standart',
+    'search.ttl.confirm': 'Təsdiqlə',
     'search.urgent_sent': 'Təcili bildiriş göndərildi. Qalan: {balance} AZN',
     'common.balance_remaining': 'Qalan:',
     'common.retry': 'Yenidən cəhd et',

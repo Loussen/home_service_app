@@ -47,7 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserModel>> bootstrap() async {
     try {
       final token = await _tokens.readToken();
-      if (token == null) {
+      if (token == null || token.isEmpty) {
         return Left(CacheFailure('No token'));
       }
       final user = await _remote.me();
@@ -59,9 +59,21 @@ class AuthRepositoryImpl implements AuthRepository {
       }
       return Right(user);
     } on DioException catch (e) {
-      await _tokens.clear();
-      if (_isBlocked(e)) {
-        return Left(AccountBlockedFailure(_message(e)));
+      // Only drop the session when the token is actually rejected.
+      // Network blips / timeouts must not force login on every restart.
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403 || _isBlocked(e)) {
+        await _tokens.clear();
+        if (_isBlocked(e)) {
+          return Left(AccountBlockedFailure(_message(e)));
+        }
+        return Left(ServerFailure(_message(e)));
+      }
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        return Left(NetworkFailure(_message(e)));
       }
       return Left(ServerFailure(_message(e)));
     }
