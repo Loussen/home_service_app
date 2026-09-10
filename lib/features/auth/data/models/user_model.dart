@@ -1,5 +1,6 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
+import 'package:home_service_app/core/utils/media_url.dart';
 
 class ProfileCompleteness {
   const ProfileCompleteness({
@@ -131,7 +132,7 @@ class UserModel {
       id: json['id'] as int,
       phone: json['phone'] as String,
       name: json['name'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: resolveMediaUrl(json['avatar_url'] as String?),
       activeRole: json['active_role'] as String? ?? 'client',
       balance: parseDouble(json['balance']),
       status: status,

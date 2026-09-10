@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -31,14 +33,12 @@ class _ProfileCompletenessBannerState extends State<ProfileCompletenessBanner> {
     final token = Object.hash(user.id, user.effectiveCompleteness.percent);
     if (_loadedFor == token) return;
     _loadedFor = token;
-    if (_hidden) {
-      _hidden = false;
-    }
     final prefs = await SharedPreferences.getInstance();
     final hidden =
         prefs.getBool(_dismissKey(user.id, user.effectiveCompleteness.percent)) ??
             false;
-    if (mounted && hidden != _hidden) {
+    if (!mounted || _loadedFor != token) return;
+    if (hidden != _hidden) {
       setState(() => _hidden = hidden);
     }
   }
@@ -61,12 +61,24 @@ class _ProfileCompletenessBannerState extends State<ProfileCompletenessBanner> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final user = context.read<AuthCubit>().state.user;
+    if (user != null && user.showCompletenessBanner) {
+      unawaited(_loadDismissed(user));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthCubit>().state.user;
     if (user == null || !user.showCompletenessBanner) {
       return const SizedBox.shrink();
     }
-    _loadDismissed(user);
+    final token = Object.hash(user.id, user.effectiveCompleteness.percent);
+    if (_loadedFor != token) {
+      unawaited(_loadDismissed(user));
+    }
     if (_hidden) return const SizedBox.shrink();
 
     final c = user.effectiveCompleteness;

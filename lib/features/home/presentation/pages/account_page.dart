@@ -214,269 +214,276 @@ class AccountPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.canvas,
           body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              children: [
-                Text(
-                  'My Sancho',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppColors.primary,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'My Sancho',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                  ),
+                  if (showApproval) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: rejected
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : approved
+                                ? AppColors.sageSoft
+                                : AppColors.mist,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.divider),
                       ),
-                ),
-                if (showApproval) ...[
-                  const SizedBox(height: 12),
+                      child: Text(
+                        user?.providerApprovalMessage ??
+                            (rejected
+                                ? t('provider.approval.rejected')
+                                : approved
+                                    ? t('provider.approval.approved')
+                                    : t('provider.approval.pending')),
+                        style: const TextStyle(height: 1.4),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: rejected
-                          ? AppColors.primary.withValues(alpha: 0.08)
-                          : approved
-                              ? AppColors.sageSoft
-                              : AppColors.mist,
-                      borderRadius: BorderRadius.circular(16),
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.divider),
                     ),
-                    child: Text(
-                      user?.providerApprovalMessage ??
-                          (rejected
-                              ? t('provider.approval.rejected')
-                              : approved
-                                  ? t('provider.approval.approved')
-                                  : t('provider.approval.pending')),
-                      style: const TextStyle(height: 1.4),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: AppColors.peach,
+                          backgroundImage: user?.avatarUrl != null
+                              ? NetworkImage(user!.avatarUrl!)
+                              : null,
+                          child: user?.avatarUrl != null
+                              ? null
+                              : Text(
+                                  initials,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(name,
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
+                              Text(role,
+                                  style: const TextStyle(color: AppColors.muted)),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () => _uploadAvatar(context),
+                                child: Text(
+                                  t('account.upload_photo'),
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _uploadAvatar(context),
+                          borderRadius: BorderRadius.circular(20),
+                          child: _RoundIcon(
+                            icon: Icons.photo_camera_outlined,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _RoundIcon(
+                            icon: Icons.notifications_outlined,
+                            color: AppColors.gold),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const ProfileCompletenessBanner(
+                    padding: EdgeInsets.only(top: 4, bottom: 12),
+                  ),
+                  SizedBox(
+                    height: 128,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      primary: false,
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        if (user?.isProvider == true) ...[
+                          _PastelCard(
+                            color: AppColors.skySoft,
+                            icon: Icons.mic_none,
+                            title: t('account.card.audio_intro'),
+                            onTap: () => context.go('/profiles'),
+                          ),
+                          _PastelCard(
+                            color: AppColors.lavender,
+                            icon: Icons.account_balance_wallet_outlined,
+                            title: t('account.card.wallet_bump'),
+                            onTap: () => context.push('/wallet'),
+                          ),
+                          _PastelCard(
+                            color: AppColors.sageSoft,
+                            icon: Icons.verified_outlined,
+                            title: t('account.card.verify'),
+                            onTap: () => context.push('/verification'),
+                          ),
+                        ] else ...[
+                          _PastelCard(
+                            color: AppColors.skySoft,
+                            icon: Icons.mic_none,
+                            title: t('account.card.voice_search'),
+                            onTap: () => context.go('/search'),
+                          ),
+                          _PastelCard(
+                            color: AppColors.cream,
+                            icon: Icons.assignment_outlined,
+                            title: t('account.card.requests'),
+                            onTap: () => context.go('/search'),
+                          ),
+                          _PastelCard(
+                            color: AppColors.lavender,
+                            icon: Icons.chat_bubble_outline,
+                            title: t('account.card.chats'),
+                            onTap: () => context.go('/chat'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Material(
+                    color: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: const BorderSide(color: AppColors.divider),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        if (user?.isProvider == true)
+                          _MenuTile(
+                            icon: Icons.shield_outlined,
+                            label: t('account.menu.profile_status'),
+                            trailing: Text(
+                              user!.displayProfileStatus,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: user.isBlocked ||
+                                        user.profileStatus == 'blocked' ||
+                                        user.isProviderRejected
+                                    ? AppColors.primary
+                                    : user.providerApprovalStatus == 'approved'
+                                        ? AppColors.published
+                                        : AppColors.secondary,
+                              ),
+                            ),
+                            onTap: user.isProviderRejected
+                                ? () => _showRejectionSheet(context, user)
+                                : () {},
+                          ),
+                        _MenuTile(
+                          icon: Icons.calendar_month_outlined,
+                          label: t('account.menu.bookings'),
+                          onTap: () => context.push('/bookings'),
+                        ),
+                        _MenuTile(
+                          icon: Icons.account_balance_wallet_outlined,
+                          label: t('account.menu.wallet', params: {
+                            'balance':
+                                user?.balance.toStringAsFixed(2) ?? '0',
+                          }),
+                          onTap: () => context.push('/wallet'),
+                        ),
+                        if (user?.isProvider == true)
+                          _MenuTile(
+                            icon: Icons.verified_outlined,
+                            label: t('account.menu.verify'),
+                            onTap: () => context.push('/verification'),
+                          ),
+                        _MenuTile(
+                          icon: Icons.star_outline,
+                          label: t('account.menu.reviews'),
+                          onTap: () => context.push('/reviews'),
+                        ),
+                        _MenuTile(
+                          icon: Icons.bookmark_border,
+                          label: t('account.menu.favorites'),
+                          onTap: () {},
+                        ),
+                        _MenuTile(
+                          icon: Icons.language,
+                          label: t('account.menu.language'),
+                          trailing: Text(
+                            getIt<AppLocaleService>().labelFor(
+                              getIt<AppLocaleService>().locale,
+                            ),
+                            style: const TextStyle(color: AppColors.muted),
+                          ),
+                          onTap: () => _pickLanguage(context),
+                        ),
+                        if (AppRemoteConfig
+                            .instance.staticPages.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                t('account.menu.info'),
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ),
+                          ...AppRemoteConfig.instance.staticPages.map(
+                            (page) => _MenuTile(
+                              icon: Icons.article_outlined,
+                              label: page.title,
+                              onTap: () => context.push(
+                                '/page/${page.slug}',
+                                extra: page.title,
+                              ),
+                            ),
+                          ),
+                        ],
+                        _MenuTile(
+                          icon: Icons.logout,
+                          label: t('account.menu.logout'),
+                          onTap: () async {
+                            if (!await confirmLogout(context)) return;
+                            if (!context.mounted) return;
+                            await context.read<AuthCubit>().logout();
+                            if (context.mounted) context.go('/login');
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: AppColors.peach,
-                        backgroundImage: user?.avatarUrl != null
-                            ? NetworkImage(user!.avatarUrl!)
-                            : null,
-                        child: user?.avatarUrl != null
-                            ? null
-                            : Text(
-                                initials,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(name,
-                                style: Theme.of(context).textTheme.titleLarge),
-                            Text(role,
-                                style:
-                                    const TextStyle(color: AppColors.muted)),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () => _uploadAvatar(context),
-                              child: Text(
-                                t('account.upload_photo'),
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => _uploadAvatar(context),
-                        borderRadius: BorderRadius.circular(20),
-                        child: _RoundIcon(
-                          icon: Icons.photo_camera_outlined,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _RoundIcon(
-                          icon: Icons.notifications_outlined,
-                          color: AppColors.gold),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const ProfileCompletenessBanner(
-                  padding: EdgeInsets.only(top: 4, bottom: 12),
-                ),
-                SizedBox(
-                  height: 128,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      if (user?.isProvider == true) ...[
-                        _PastelCard(
-                          color: AppColors.skySoft,
-                          icon: Icons.mic_none,
-                          title: t('account.card.audio_intro'),
-                          onTap: () => context.go('/profiles'),
-                        ),
-                        _PastelCard(
-                          color: AppColors.lavender,
-                          icon: Icons.account_balance_wallet_outlined,
-                          title: t('account.card.wallet_bump'),
-                          onTap: () => context.push('/wallet'),
-                        ),
-                        _PastelCard(
-                          color: AppColors.sageSoft,
-                          icon: Icons.verified_outlined,
-                          title: t('account.card.verify'),
-                          onTap: () => context.push('/verification'),
-                        ),
-                      ] else ...[
-                        _PastelCard(
-                          color: AppColors.skySoft,
-                          icon: Icons.mic_none,
-                          title: t('account.card.voice_search'),
-                          onTap: () => context.go('/search'),
-                        ),
-                        _PastelCard(
-                          color: AppColors.cream,
-                          icon: Icons.assignment_outlined,
-                          title: t('account.card.requests'),
-                          onTap: () => context.go('/search'),
-                        ),
-                        _PastelCard(
-                          color: AppColors.lavender,
-                          icon: Icons.chat_bubble_outline,
-                          title: t('account.card.chats'),
-                          onTap: () => context.go('/chat'),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Material(
-                  color: AppColors.surface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: const BorderSide(color: AppColors.divider),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                      children: [
-                      if (user?.isProvider == true)
-                        _MenuTile(
-                          icon: Icons.shield_outlined,
-                          label: t('account.menu.profile_status'),
-                          trailing: Text(
-                            user!.displayProfileStatus,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: user.isBlocked ||
-                                      user.profileStatus == 'blocked' ||
-                                      user.isProviderRejected
-                                  ? AppColors.primary
-                                  : user.providerApprovalStatus == 'approved'
-                                      ? AppColors.published
-                                      : AppColors.secondary,
-                            ),
-                          ),
-                          onTap: user.isProviderRejected
-                              ? () => _showRejectionSheet(context, user)
-                              : () {},
-                        ),
-                      _MenuTile(
-                        icon: Icons.calendar_month_outlined,
-                        label: t('account.menu.bookings'),
-                        onTap: () => context.push('/bookings'),
-                      ),
-                      _MenuTile(
-                        icon: Icons.account_balance_wallet_outlined,
-                        label: t('account.menu.wallet', params: {
-                          'balance':
-                              user?.balance.toStringAsFixed(2) ?? '0',
-                        }),
-                        onTap: () => context.push('/wallet'),
-                      ),
-                      if (user?.isProvider == true)
-                        _MenuTile(
-                          icon: Icons.verified_outlined,
-                          label: t('account.menu.verify'),
-                          onTap: () => context.push('/verification'),
-                        ),
-                      _MenuTile(
-                        icon: Icons.star_outline,
-                        label: t('account.menu.reviews'),
-                        onTap: () => context.push('/reviews'),
-                      ),
-                      _MenuTile(
-                        icon: Icons.bookmark_border,
-                        label: t('account.menu.favorites'),
-                        onTap: () {},
-                      ),
-                      _MenuTile(
-                        icon: Icons.language,
-                        label: t('account.menu.language'),
-                        trailing: Text(
-                          getIt<AppLocaleService>().labelFor(
-                            getIt<AppLocaleService>().locale,
-                          ),
-                          style: const TextStyle(color: AppColors.muted),
-                        ),
-                        onTap: () => _pickLanguage(context),
-                      ),
-                      if (AppRemoteConfig.instance.staticPages.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              t('account.menu.info'),
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-                        ),
-                        ...AppRemoteConfig.instance.staticPages.map(
-                          (page) => _MenuTile(
-                            icon: Icons.article_outlined,
-                            label: page.title,
-                            onTap: () => context.push(
-                              '/page/${page.slug}',
-                              extra: page.title,
-                            ),
-                          ),
-                        ),
-                      ],
-                      _MenuTile(
-                        icon: Icons.logout,
-                        label: t('account.menu.logout'),
-                        onTap: () async {
-                          if (!await confirmLogout(context)) return;
-                          if (!context.mounted) return;
-                          await context.read<AuthCubit>().logout();
-                          if (context.mounted) context.go('/login');
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );

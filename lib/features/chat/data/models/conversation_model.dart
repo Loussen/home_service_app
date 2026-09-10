@@ -1,4 +1,5 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/utils/media_url.dart';
 
 class ChatUserModel {
   const ChatUserModel({
@@ -23,7 +24,7 @@ class ChatUserModel {
       id: json['id'] as int,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      avatarUrl: resolveMediaUrl(json['avatar_url'] as String?),
     );
   }
 }

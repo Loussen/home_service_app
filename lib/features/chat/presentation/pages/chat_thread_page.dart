@@ -211,94 +211,102 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
               Expanded(
                 child: state.loading && conv == null
                     ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                        itemCount: conv?.messages.length ?? 0,
-                        itemBuilder: (context, index) {
-                          final msg = conv!.messages[index];
-                          if (msg.isOffer && msg.offer != null) {
+                    : GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        child: ListView.builder(
+                          controller: _scroll,
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                          itemCount: conv?.messages.length ?? 0,
+                          itemBuilder: (context, index) {
+                            final msg = conv!.messages[index];
+                            if (msg.isOffer && msg.offer != null) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: OfferCard(
+                                  offer: msg.offer!,
+                                  isClient: isClient,
+                                  isProvider: isProvider,
+                                  myUserId: myId,
+                                  busy: state.sending,
+                                  onAccept: () => cubit.offerAction(
+                                      msg.offer!.id, 'accept'),
+                                  onDecline: () => cubit.offerAction(
+                                      msg.offer!.id, 'decline'),
+                                  onComplete: () => cubit.offerAction(
+                                      msg.offer!.id, 'complete'),
+                                  onCancel: () => cubit.offerAction(
+                                      msg.offer!.id, 'cancel'),
+                                  onReview: () =>
+                                      _composeReview(cubit, msg.offer!.id),
+                                ),
+                              );
+                            }
+                            final mine = myId != null && msg.senderId == myId;
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: OfferCard(
-                                offer: msg.offer!,
-                                isClient: isClient,
-                                isProvider: isProvider,
-                                myUserId: myId,
-                                busy: state.sending,
-                                onAccept: () =>
-                                    cubit.offerAction(msg.offer!.id, 'accept'),
-                                onDecline: () =>
-                                    cubit.offerAction(msg.offer!.id, 'decline'),
-                                onComplete: () =>
-                                    cubit.offerAction(msg.offer!.id, 'complete'),
-                                onCancel: () =>
-                                    cubit.offerAction(msg.offer!.id, 'cancel'),
-                                onReview: () =>
-                                    _composeReview(cubit, msg.offer!.id),
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                mainAxisAlignment: mine
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
+                                children: [
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width *
+                                              0.75,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: mine
+                                            ? AppColors.primary
+                                            : AppColors.surface,
+                                        border: mine
+                                            ? null
+                                            : Border.all(
+                                                color: AppColors.divider),
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(18),
+                                          topRight: const Radius.circular(18),
+                                          bottomLeft: Radius.circular(
+                                            mine ? 18 : 4,
+                                          ),
+                                          bottomRight: Radius.circular(
+                                            mine ? 4 : 18,
+                                          ),
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.ink
+                                                .withValues(alpha: 0.04),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        msg.body ?? '',
+                                        style: TextStyle(
+                                          color: mine
+                                              ? Colors.white
+                                              : AppColors.ink,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
-                          }
-                          final mine = myId != null && msg.senderId == myId;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              mainAxisAlignment: mine
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              children: [
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxWidth:
-                                        MediaQuery.of(context).size.width *
-                                        0.75,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: mine
-                                          ? AppColors.primary
-                                          : AppColors.surface,
-                                      border: mine
-                                          ? null
-                                          : Border.all(color: AppColors.divider),
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: const Radius.circular(18),
-                                        topRight: const Radius.circular(18),
-                                        bottomLeft: Radius.circular(
-                                          mine ? 18 : 4,
-                                        ),
-                                        bottomRight: Radius.circular(
-                                          mine ? 4 : 18,
-                                        ),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.ink
-                                              .withValues(alpha: 0.04),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      msg.body ?? '',
-                                      style: TextStyle(
-                                        color: mine
-                                            ? Colors.white
-                                            : AppColors.ink,
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                          },
+                        ),
                       ),
               ),
               SafeArea(
@@ -312,6 +320,17 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                           controller: _input,
                           minLines: 1,
                           maxLines: 4,
+                          textInputAction: TextInputAction.send,
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          onSubmitted: state.sending
+                              ? null
+                              : (value) {
+                                  final text = value.trim();
+                                  if (text.isEmpty) return;
+                                  _input.clear();
+                                  cubit.send(text);
+                                },
                           decoration: InputDecoration(
                             hintText: t('chat.message_hint'),
                           ),
@@ -324,8 +343,10 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                           onPressed: state.sending
                               ? null
                               : () {
-                                  final text = _input.text;
+                                  final text = _input.text.trim();
+                                  if (text.isEmpty) return;
                                   _input.clear();
+                                  FocusManager.instance.primaryFocus?.unfocus();
                                   cubit.send(text);
                                 },
                           icon: Icon(

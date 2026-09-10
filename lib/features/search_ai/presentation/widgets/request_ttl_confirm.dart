@@ -121,7 +121,7 @@ Future<int?> confirmRequestTtl(BuildContext context) async {
                                   Text(
                                     t('search.ttl.default_badge'),
                                     style: const TextStyle(
-                                      color: AppColors.accent,
+                                      color: AppColors.secondary,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 12,
                                     ),
