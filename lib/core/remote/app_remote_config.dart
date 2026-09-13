@@ -94,6 +94,13 @@ class AppRemoteConfig {
 
   String t(String key, {Map<String, String>? params}) {
     var value = _payload.strings[key] ?? _defaultStrings[key] ?? key;
+    // PHP single-quoted / DB values often store literal "\n" instead of a newline.
+    if (value.contains(r'\n') || value.contains(r'\r')) {
+      value = value
+          .replaceAll(r'\r\n', '\n')
+          .replaceAll(r'\n', '\n')
+          .replaceAll(r'\r', '\n');
+    }
     if (params != null) {
       for (final e in params.entries) {
         value = value.replaceAll('{${e.key}}', e.value);
@@ -510,6 +517,10 @@ class AppRemoteConfig {
     'block.title': 'Blokla',
     'block.confirm':
         'Bu istifadəçini bloklamaq istəyirsiniz? Söhbət tarixçəsi qalacaq, amma heç bir tərəf mesaj göndərə bilməyəcək.',
+    'block.confirm.client':
+        'Bu xidmətçini bloklamaq istəyirsiniz? Bundan sonra sorğularınızın nəticəsində görünməyəcək və mesaj yazmaq olmaz. Söhbət tarixçəsi qalacaq.',
+    'block.confirm.provider':
+        'Bu müştərini bloklamaq istəyirsiniz? Bundan sonra onun işləri sizə gəlməyəcək və mesaj yazmaq olmaz. Söhbət tarixçəsi qalacaq.',
     'block.cancel': 'Ləğv',
     'block.confirm_action': 'Blokla',
     'block.done': 'İstifadəçi bloklandı',

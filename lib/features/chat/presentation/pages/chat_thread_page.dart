@@ -101,10 +101,14 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
     ChatThreadCubit cubit,
     int userId,
   ) async {
+    final isProvider =
+        context.read<AuthCubit>().state.user?.isProvider == true;
     final ok = await showAppConfirm(
       context,
       title: t('block.title'),
-      message: t('block.confirm'),
+      message: t(
+        isProvider ? 'block.confirm.provider' : 'block.confirm.client',
+      ),
       confirmLabel: t('block.confirm_action'),
       cancelLabel: t('block.cancel'),
       destructive: true,
