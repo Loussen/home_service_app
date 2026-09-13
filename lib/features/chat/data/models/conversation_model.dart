@@ -1,5 +1,6 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/media_url.dart';
+import 'package:home_service_app/core/utils/request_when.dart';
 
 class ChatUserModel {
   const ChatUserModel({
@@ -25,6 +26,87 @@ class ChatUserModel {
       name: json['name'] as String?,
       phone: json['phone'] as String?,
       avatarUrl: resolveMediaUrl(json['avatar_url'] as String?),
+    );
+  }
+}
+
+class ConversationRequestSummary {
+  const ConversationRequestSummary({
+    required this.id,
+    this.transcribedText,
+    this.address,
+    this.parsedCriteria,
+  });
+
+  final int id;
+  final String? transcribedText;
+  final String? address;
+  final Map<String, dynamic>? parsedCriteria;
+
+  String? get snippet {
+    final text = transcribedText?.trim();
+    if (text != null && text.isNotEmpty) {
+      return text.length > 80 ? '${text.substring(0, 80)}…' : text;
+    }
+    final addr = address?.trim();
+    if (addr != null && addr.isNotEmpty) return addr;
+    return null;
+  }
+
+  String? get whenLabel => formatRequestServiceWhen(parsedCriteria);
+
+  /// Compact line for list/thread: "snippet · when" or either part.
+  String? get contextLine {
+    final parts = <String>[
+      if (snippet != null) snippet!,
+      if (whenLabel != null) whenLabel!,
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
+
+  factory ConversationRequestSummary.fromJson(Map<String, dynamic> json) {
+    final criteria = json['parsed_criteria'];
+    return ConversationRequestSummary(
+      id: json['id'] as int,
+      transcribedText: json['transcribed_text'] as String?,
+      address: json['address'] as String?,
+      parsedCriteria: criteria is Map<String, dynamic>
+          ? criteria
+          : (criteria is Map
+              ? Map<String, dynamic>.from(criteria)
+              : null),
+    );
+  }
+}
+
+class BlockedUserModel {
+  const BlockedUserModel({
+    required this.id,
+    this.name,
+    this.avatarUrl,
+    this.role,
+    this.blockedAt,
+  });
+
+  final int id;
+  final String? name;
+  final String? avatarUrl;
+  final String? role;
+  final String? blockedAt;
+
+  String get displayName {
+    if (name != null && name!.trim().isNotEmpty) return name!;
+    return t('account.user_fallback');
+  }
+
+  factory BlockedUserModel.fromJson(Map<String, dynamic> json) {
+    return BlockedUserModel(
+      id: json['id'] as int,
+      name: json['name'] as String?,
+      avatarUrl: resolveMediaUrl(json['avatar_url'] as String?),
+      role: json['role'] as String?,
+      blockedAt: json['blocked_at'] as String?,
     );
   }
 }
@@ -167,8 +249,12 @@ class ConversationModel {
     required this.providerId,
     this.providerProfileId,
     this.serviceRequestId,
+    this.serviceRequest,
     this.unreadCount = 0,
     this.canSendOffer = false,
+    this.isBlocked = false,
+    this.blockedByMe = false,
+    this.canMessage = true,
     this.otherUser,
     this.profileTitle,
     this.lastMessage,
@@ -181,8 +267,12 @@ class ConversationModel {
   final int providerId;
   final int? providerProfileId;
   final int? serviceRequestId;
+  final ConversationRequestSummary? serviceRequest;
   final int unreadCount;
   final bool canSendOffer;
+  final bool isBlocked;
+  final bool blockedByMe;
+  final bool canMessage;
   final ChatUserModel? otherUser;
   final String? profileTitle;
   final ChatMessageModel? lastMessage;
@@ -195,6 +285,10 @@ class ConversationModel {
     List<ChatMessageModel>? messages,
     ChatUserModel? otherUser,
     bool? canSendOffer,
+    bool? isBlocked,
+    bool? blockedByMe,
+    bool? canMessage,
+    ConversationRequestSummary? serviceRequest,
   }) {
     return ConversationModel(
       id: id,
@@ -202,8 +296,12 @@ class ConversationModel {
       providerId: providerId,
       providerProfileId: providerProfileId,
       serviceRequestId: serviceRequestId,
+      serviceRequest: serviceRequest ?? this.serviceRequest,
       unreadCount: unreadCount,
       canSendOffer: canSendOffer ?? this.canSendOffer,
+      isBlocked: isBlocked ?? this.isBlocked,
+      blockedByMe: blockedByMe ?? this.blockedByMe,
+      canMessage: canMessage ?? this.canMessage,
       otherUser: otherUser ?? this.otherUser,
       profileTitle: profileTitle,
       lastMessage: lastMessage ?? this.lastMessage,
@@ -217,6 +315,8 @@ class ConversationModel {
     final profile = json['provider_profile'] as Map<String, dynamic>?;
     final last = json['last_message'] as Map<String, dynamic>?;
     final msgs = json['messages'] as List<dynamic>? ?? [];
+    final isBlocked = json['is_blocked'] == true;
+    final srJson = json['service_request'] as Map<String, dynamic>?;
 
     return ConversationModel(
       id: json['id'] as int,
@@ -224,8 +324,14 @@ class ConversationModel {
       providerId: json['provider_id'] as int,
       providerProfileId: json['provider_profile_id'] as int?,
       serviceRequestId: json['service_request_id'] as int?,
+      serviceRequest: srJson != null
+          ? ConversationRequestSummary.fromJson(srJson)
+          : null,
       unreadCount: json['unread_count'] as int? ?? 0,
       canSendOffer: json['can_send_offer'] as bool? ?? false,
+      isBlocked: isBlocked,
+      blockedByMe: json['blocked_by_me'] == true,
+      canMessage: json['can_message'] as bool? ?? !isBlocked,
       otherUser: other != null ? ChatUserModel.fromJson(other) : null,
       profileTitle: profile?['title'] as String? ??
           (profile?['category'] as Map<String, dynamic>?)?['name'] as String? ??

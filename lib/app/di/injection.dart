@@ -43,6 +43,8 @@ import 'package:home_service_app/features/bookings/data/bookings_remote_data_sou
 import 'package:home_service_app/features/bookings/data/bookings_repository_impl.dart';
 import 'package:home_service_app/features/bookings/domain/bookings_repository.dart';
 import 'package:home_service_app/features/bookings/presentation/cubit/bookings_cubit.dart';
+import 'package:home_service_app/features/notifications/data/notifications_remote_data_source.dart';
+import 'package:home_service_app/features/notifications/domain/notifications_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final getIt = GetIt.instance;
@@ -108,6 +110,12 @@ Future<void> configureDependencies() async {
       () => BookingsRepositoryImpl(getIt()),
     )
     ..registerFactory(() => BookingsCubit(getIt()))
+    ..registerLazySingleton<NotificationsRemoteDataSource>(
+      () => NotificationsRemoteDataSource(getIt<ApiClient>()),
+    )
+    ..registerLazySingleton<NotificationsRepository>(
+      () => NotificationsRepositoryImpl(getIt()),
+    )
     ..registerLazySingleton<ProfileRemoteDataSource>(
       () => ProfileRemoteDataSource(getIt<ApiClient>()),
     )

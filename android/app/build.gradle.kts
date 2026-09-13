@@ -36,6 +36,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -49,6 +50,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
         // AndroidManifest ${GOOGLE_MAPS_API_KEY} — dart-define does not fill this.
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = resolveGoogleMapsApiKey()
     }
@@ -70,4 +72,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Required by flutter_local_notifications (heads-up + app icon).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

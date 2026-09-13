@@ -148,6 +148,34 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, List<ProviderProfileModel>>> listFavorites() async {
+    try {
+      return Right(await _remote.listFavorites());
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ProviderProfileModel>> addFavorite(int profileId) async {
+    try {
+      return Right(await _remote.addFavorite(profileId));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> removeFavorite(int profileId) async {
+    try {
+      await _remote.removeFavorite(profileId);
+      return const Right(unit);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
   String _msg(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['message'] is String) {

@@ -116,6 +116,22 @@ class ChatThreadCubit extends Cubit<ChatThreadState> {
     );
   }
 
+  Future<bool> unblockUser(int userId) async {
+    if (state.sending) return false;
+    emit(state.copyWith(sending: true, clearMessage: true));
+    final result = await _repo.unblockUser(userId);
+    return result.fold(
+      (f) {
+        emit(state.copyWith(sending: false, message: f.message));
+        return false;
+      },
+      (_) {
+        emit(state.copyWith(sending: false));
+        return true;
+      },
+    );
+  }
+
   Future<bool> reportUser({
     required int reportedUserId,
     required String reason,

@@ -31,6 +31,7 @@ class _ProviderPublicProfilePageState extends State<ProviderPublicProfilePage> {
   String? _error;
   bool _loading = true;
   bool _connecting = false;
+  bool _favoriteBusy = false;
   final _player = AudioPlayer();
   bool _playing = false;
 
@@ -86,6 +87,37 @@ class _ProviderPublicProfilePageState extends State<ProviderPublicProfilePage> {
     );
   }
 
+  Future<void> _toggleFavorite() async {
+    final profile = _profile;
+    if (profile == null || _favoriteBusy) return;
+    final next = !profile.isFavorite;
+    setState(() {
+      _favoriteBusy = true;
+      _profile = profile.copyWith(isFavorite: next);
+    });
+    final repo = getIt<ProfileRepository>();
+    final result = next
+        ? await repo.addFavorite(profile.id)
+        : await repo.removeFavorite(profile.id);
+    if (!mounted) return;
+    setState(() => _favoriteBusy = false);
+    result.fold(
+      (f) {
+        setState(() => _profile = profile.copyWith(isFavorite: !next));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(f.message)),
+        );
+      },
+      (_) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next ? t('favorites.added') : t('favorites.removed'),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _toggleAudio(String url) async {
     try {
       if (_playing) {
@@ -128,6 +160,21 @@ class _ProviderPublicProfilePageState extends State<ProviderPublicProfilePage> {
       appBar: AppBar(
         title: Text(t('provider.profile_title')),
         backgroundColor: AppColors.canvas,
+        actions: [
+          if (canConnect && _profile != null)
+            IconButton(
+              tooltip: _profile!.isFavorite
+                  ? t('favorites.toggle_remove')
+                  : t('favorites.toggle_add'),
+              onPressed: _favoriteBusy ? null : _toggleFavorite,
+              icon: Icon(
+                _profile!.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                color: _profile!.isFavorite
+                    ? AppColors.secondary
+                    : AppColors.primary,
+              ),
+            ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

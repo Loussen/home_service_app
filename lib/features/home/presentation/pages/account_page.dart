@@ -311,9 +311,20 @@ class AccountPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        _RoundIcon(
+                        InkWell(
+                          onTap: () async {
+                            await context.push('/notifications');
+                            if (context.mounted) {
+                              await context.read<AuthCubit>().bootstrap();
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: _RoundIcon(
                             icon: Icons.notifications_outlined,
-                            color: AppColors.gold),
+                            color: AppColors.gold,
+                            badgeCount: user?.unreadNotificationsCount ?? 0,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -426,10 +437,16 @@ class AccountPage extends StatelessWidget {
                           onTap: () => context.push('/reviews'),
                         ),
                         _MenuTile(
-                          icon: Icons.bookmark_border,
-                          label: t('account.menu.favorites'),
-                          onTap: () {},
+                          icon: Icons.block,
+                          label: t('account.menu.blocked'),
+                          onTap: () => context.push('/blocked'),
                         ),
+                        if (user?.isClient == true)
+                          _MenuTile(
+                            icon: Icons.bookmark_border,
+                            label: t('account.menu.favorites'),
+                            onTap: () => context.push('/favorites'),
+                          ),
                         _MenuTile(
                           icon: Icons.language,
                           label: t('account.menu.language'),
@@ -440,6 +457,11 @@ class AccountPage extends StatelessWidget {
                             style: const TextStyle(color: AppColors.muted),
                           ),
                           onTap: () => _pickLanguage(context),
+                        ),
+                        _MenuTile(
+                          icon: Icons.menu_book_outlined,
+                          label: t('account.menu.how_it_works'),
+                          onTap: () => context.push('/welcome?replay=1'),
                         ),
                         if (AppRemoteConfig
                             .instance.staticPages.isNotEmpty) ...[
@@ -493,20 +515,54 @@ class AccountPage extends StatelessWidget {
 }
 
 class _RoundIcon extends StatelessWidget {
-  const _RoundIcon({required this.icon, required this.color});
+  const _RoundIcon({
+    required this.icon,
+    required this.color,
+    this.badgeCount = 0,
+  });
   final IconData icon;
   final Color color;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 18, color: color),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        if (badgeCount > 0)
+          Positioned(
+            right: -2,
+            top: -2,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                badgeCount > 99 ? '99+' : '$badgeCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

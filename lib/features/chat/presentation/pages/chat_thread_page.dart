@@ -10,7 +10,7 @@ import 'package:home_service_app/features/chat/presentation/widgets/offer_card.d
 import 'package:home_service_app/features/chat/presentation/widgets/offer_composer.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/review_composer.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/report_composer.dart';
-import 'package:go_router/go_router.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 
 class ChatThreadPage extends StatelessWidget {
   const ChatThreadPage({super.key, required this.conversationId});
@@ -101,22 +101,13 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
     ChatThreadCubit cubit,
     int userId,
   ) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t('block.title')),
-        content: Text(t('block.confirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t('block.cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t('block.confirm_action')),
-          ),
-        ],
-      ),
+    final ok = await showAppConfirm(
+      context,
+      title: t('block.title'),
+      message: t('block.confirm'),
+      confirmLabel: t('block.confirm_action'),
+      cancelLabel: t('block.cancel'),
+      destructive: true,
     );
     if (ok != true || !context.mounted) return;
     final blocked = await cubit.blockUser(userId);
@@ -124,7 +115,30 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t('block.done'))),
       );
-      context.pop();
+      await cubit.load();
+    }
+  }
+
+  Future<void> _confirmUnblock(
+    BuildContext context,
+    ChatThreadCubit cubit,
+    int userId,
+    String name,
+  ) async {
+    final ok = await showAppConfirm(
+      context,
+      title: t('block.unblock_title'),
+      message: t('block.unblock_confirm', params: {'name': name}),
+      confirmLabel: t('block.unblock_action'),
+      cancelLabel: t('block.cancel'),
+    );
+    if (ok != true || !context.mounted) return;
+    final done = await cubit.unblockUser(userId);
+    if (done && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('block.unblocked'))),
+      );
+      await cubit.load();
     }
   }
 
@@ -150,12 +164,15 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
             myId != null && conv != null && conv.providerId == myId;
         final canSendOffer = me?.isProvider == true &&
             isProviderParty &&
-            (conv?.canSendOffer ?? false);
+            (conv?.canSendOffer ?? false) &&
+            (conv?.canMessage ?? true);
+        final isBlocked = conv?.isBlocked == true;
         final isProvider = isProviderParty;
         final title = conv?.otherUser?.displayName ??
             conv?.profileTitle ??
             t('chat.fallback_name');
         final phone = conv?.otherUser?.phone;
+        final requestContext = conv?.serviceRequest?.contextLine;
         final cubit = context.read<ChatThreadCubit>();
 
         return Scaffold(
@@ -163,8 +180,44 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title),
-                if (phone != null && phone.isNotEmpty)
+                Row(
+                  children: [
+                    Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
+                    if (isBlocked) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.mist,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          t('chat.blocked_badge'),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (requestContext != null)
+                  Text(
+                    requestContext,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  )
+                else if (phone != null && phone.isNotEmpty)
                   Text(
                     phone,
                     style: const TextStyle(
@@ -191,6 +244,13 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                       _reportUser(cubit, otherId);
                     } else if (value == 'block') {
                       _confirmBlock(context, cubit, otherId);
+                    } else if (value == 'unblock') {
+                      _confirmUnblock(
+                        context,
+                        cubit,
+                        otherId,
+                        conv.otherUser!.displayName,
+                      );
                     }
                   },
                   itemBuilder: (_) => [
@@ -198,16 +258,65 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                       value: 'report',
                       child: Text(t('report.menu')),
                     ),
-                    PopupMenuItem(
-                      value: 'block',
-                      child: Text(t('block.menu')),
-                    ),
+                    if (conv?.blockedByMe == true)
+                      PopupMenuItem(
+                        value: 'unblock',
+                        child: Text(t('block.unblock_action')),
+                      )
+                    else if (conv?.isBlocked != true)
+                      PopupMenuItem(
+                        value: 'block',
+                        child: Text(t('block.menu')),
+                      ),
                   ],
                 ),
             ],
           ),
           body: Column(
             children: [
+              if (isBlocked)
+                Material(
+                  color: AppColors.peach,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.block,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            conv?.blockedByMe == true
+                                ? t('chat.blocked_by_me_hint')
+                                : t('chat.blocked_hint'),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.3,
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (conv?.blockedByMe == true &&
+                            conv?.otherUser?.id != null)
+                          TextButton(
+                            onPressed: state.sending
+                                ? null
+                                : () => _confirmUnblock(
+                                      context,
+                                      cubit,
+                                      conv!.otherUser!.id,
+                                      conv.otherUser!.displayName,
+                                    ),
+                            child: Text(t('block.unblock_action')),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               Expanded(
                 child: state.loading && conv == null
                     ? const Center(child: CircularProgressIndicator())
@@ -231,7 +340,7 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                                   isClient: isClient,
                                   isProvider: isProvider,
                                   myUserId: myId,
-                                  busy: state.sending,
+                                  busy: state.sending || isBlocked,
                                   onAccept: () => cubit.offerAction(
                                       msg.offer!.id, 'accept'),
                                   onDecline: () => cubit.offerAction(
@@ -313,51 +422,64 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _input,
-                          minLines: 1,
-                          maxLines: 4,
-                          textInputAction: TextInputAction.send,
-                          onTapOutside: (_) =>
-                              FocusManager.instance.primaryFocus?.unfocus(),
-                          onSubmitted: state.sending
-                              ? null
-                              : (value) {
-                                  final text = value.trim();
-                                  if (text.isEmpty) return;
-                                  _input.clear();
-                                  cubit.send(text);
-                                },
-                          decoration: InputDecoration(
-                            hintText: t('chat.message_hint'),
+                  child: isBlocked
+                      ? Text(
+                          t('chat.blocked_composer'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
                           ),
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _input,
+                                minLines: 1,
+                                maxLines: 4,
+                                textInputAction: TextInputAction.send,
+                                onTapOutside: (_) => FocusManager
+                                    .instance.primaryFocus
+                                    ?.unfocus(),
+                                onSubmitted: state.sending
+                                    ? null
+                                    : (value) {
+                                        final text = value.trim();
+                                        if (text.isEmpty) return;
+                                        _input.clear();
+                                        cubit.send(text);
+                                      },
+                                decoration: InputDecoration(
+                                  hintText: t('chat.message_hint'),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              backgroundColor: AppColors.primary,
+                              child: IconButton(
+                                onPressed: state.sending
+                                    ? null
+                                    : () {
+                                        final text = _input.text.trim();
+                                        if (text.isEmpty) return;
+                                        _input.clear();
+                                        FocusManager.instance.primaryFocus
+                                            ?.unfocus();
+                                        cubit.send(text);
+                                      },
+                                icon: Icon(
+                                  state.sending
+                                      ? Icons.hourglass_empty
+                                      : Icons.send,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        child: IconButton(
-                          onPressed: state.sending
-                              ? null
-                              : () {
-                                  final text = _input.text.trim();
-                                  if (text.isEmpty) return;
-                                  _input.clear();
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  cubit.send(text);
-                                },
-                          icon: Icon(
-                            state.sending ? Icons.hourglass_empty : Icons.send,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],

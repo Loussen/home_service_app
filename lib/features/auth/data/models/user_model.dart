@@ -64,6 +64,7 @@ class UserModel {
     this.needsProviderApproval = false,
     this.providerApprovalMessage,
     this.providerRejectionNote,
+    this.unreadNotificationsCount = 0,
   });
 
   final int id;
@@ -86,6 +87,7 @@ class UserModel {
   final bool needsProviderApproval;
   final String? providerApprovalMessage;
   final String? providerRejectionNote;
+  final int unreadNotificationsCount;
   bool get isProvider => activeRole == 'provider';
   bool get isClient => activeRole == 'client';
   bool get needsProviderOnboarding =>
@@ -160,6 +162,8 @@ class UserModel {
       needsProviderApproval: json['needs_provider_approval'] == true,
       providerApprovalMessage: json['provider_approval_message'] as String?,
       providerRejectionNote: json['provider_rejection_note'] as String?,
+      unreadNotificationsCount:
+          (json['unread_notifications_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

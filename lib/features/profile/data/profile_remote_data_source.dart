@@ -153,4 +153,24 @@ class ProfileRemoteDataSource {
       balance: (data['balance'] as num).toDouble(),
     );
   }
+
+  Future<List<ProviderProfileModel>> listFavorites() async {
+    final res = await _client.dio.get('/favorites');
+    final list = res.data['data'] as List<dynamic>;
+    return list
+        .map((e) => ProviderProfileModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ProviderProfileModel> addFavorite(int providerProfileId) async {
+    final res =
+        await _client.dio.post('/provider-profiles/$providerProfileId/favorite');
+    return ProviderProfileModel.fromJson(
+      res.data['data'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<void> removeFavorite(int providerProfileId) async {
+    await _client.dio.delete('/provider-profiles/$providerProfileId/favorite');
+  }
 }

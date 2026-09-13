@@ -15,6 +15,8 @@ import UIKit
        !key.hasPrefix("$(") {
       GMSServices.provideAPIKey(key)
     }
+    // Needed so FCM can map APNs → FCM token (My Sancho push).
+    application.registerForRemoteNotifications()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

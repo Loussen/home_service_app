@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
@@ -265,21 +266,12 @@ class _ProfileCard extends StatelessWidget {
                 icon: Icons.delete_outline,
                 color: AppColors.muted,
                 onTap: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(t('profiles.delete_title')),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(t('profiles.delete_no')),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(t('profiles.delete_yes')),
-                        ),
-                      ],
-                    ),
+                  final ok = await showAppConfirm(
+                    context,
+                    title: t('profiles.delete_title'),
+                    confirmLabel: t('profiles.delete_yes'),
+                    cancelLabel: t('profiles.delete_no'),
+                    destructive: true,
                   );
                   if (ok == true && context.mounted) {
                     await context.read<ProfileListCubit>().delete(profile.id);

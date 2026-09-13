@@ -31,6 +31,7 @@ class ProviderProfileModel {
     this.userName,
     this.bumpActive = false,
     this.bumpRemainingHours = 0,
+    this.isFavorite = false,
   });
 
   final int id;
@@ -60,6 +61,7 @@ class ProviderProfileModel {
   final String? userName;
   final bool bumpActive;
   final int bumpRemainingHours;
+  final bool isFavorite;
 
   List<int> get categoryIds {
     if (categories.isNotEmpty) {
@@ -114,9 +116,43 @@ class ProviderProfileModel {
       userName: json['user_name'] as String?,
       bumpActive: json['bump_active'] == true,
       bumpRemainingHours: (json['bump_remaining_hours'] as num?)?.toInt() ?? 0,
+      isFavorite: json['is_favorite'] == true,
       schedules: schedulesJson
           .map((e) => ScheduleSlot.fromJson(e as Map<String, dynamic>))
           .toList(),
+    );
+  }
+
+  ProviderProfileModel copyWith({bool? isFavorite}) {
+    return ProviderProfileModel(
+      id: id,
+      userId: userId,
+      categoryId: categoryId,
+      category: category,
+      categories: categories,
+      title: title,
+      bio: bio,
+      audioIntroUrl: audioIntroUrl,
+      isVerified: isVerified,
+      isVip: isVip,
+      latitude: latitude,
+      longitude: longitude,
+      city: city,
+      district: district,
+      cityId: cityId,
+      districtId: districtId,
+      ratingAvg: ratingAvg,
+      ratingCount: ratingCount,
+      isActive: isActive,
+      isFull: isFull,
+      fullUntil: fullUntil,
+      quietHoursStart: quietHoursStart,
+      quietHoursEnd: quietHoursEnd,
+      schedules: schedules,
+      userName: userName,
+      bumpActive: bumpActive,
+      bumpRemainingHours: bumpRemainingHours,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

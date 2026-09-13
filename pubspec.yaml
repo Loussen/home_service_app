@@ -1,7 +1,7 @@
 name: home_service_app
 description: Ev və Ailə Xidmətləri — AI + geo home service platform
 publish_to: 'none'
-version: 1.0.0+7
+version: 1.0.0+8
 
 environment:
   sdk: ^3.5.0
@@ -32,6 +32,7 @@ dependencies:
   image_picker: ^1.1.2
   google_fonts: ^6.2.1
   flutter_html: ^3.0.0
+  flutter_local_notifications: ^22.3.1
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +55,7 @@ flutter:
   assets:
     - assets/brand/logo-light.jpg
     - assets/brand/logo-color.jpg
+    - assets/brand/notification_logo.png
     - assets/audio/voice_greeting_az.m4a
     - assets/audio/voice_greeting_en.m4a
     - assets/audio/voice_greeting_ru.m4a

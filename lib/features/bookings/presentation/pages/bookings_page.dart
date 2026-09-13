@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/bookings/data/models/booking_model.dart';
 import 'package:home_service_app/features/bookings/presentation/cubit/bookings_cubit.dart';
@@ -24,22 +25,13 @@ class _BookingsView extends StatelessWidget {
   const _BookingsView();
 
   Future<void> _confirmCancel(BuildContext context, int id) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t('bookings.cancel_title')),
-        content: Text(t('bookings.cancel_confirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t('block.cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t('bookings.cancel_action')),
-          ),
-        ],
-      ),
+    final ok = await showAppConfirm(
+      context,
+      title: t('bookings.cancel_title'),
+      message: t('bookings.cancel_confirm'),
+      confirmLabel: t('bookings.cancel_action'),
+      cancelLabel: t('block.cancel'),
+      destructive: true,
     );
     if (ok == true && context.mounted) {
       await context.read<BookingsCubit>().cancel(id);

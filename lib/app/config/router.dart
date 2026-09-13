@@ -16,6 +16,9 @@ import 'package:home_service_app/features/auth/presentation/pages/provider_onboa
 import 'package:home_service_app/features/auth/presentation/pages/provider_pending_page.dart';
 import 'package:home_service_app/features/auth/presentation/pages/role_page.dart';
 import 'package:home_service_app/features/welcome/presentation/pages/welcome_intro_page.dart';
+import 'package:home_service_app/features/chat/presentation/pages/blocked_users_page.dart';
+import 'package:home_service_app/features/profile/presentation/pages/favorites_page.dart';
+import 'package:home_service_app/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:home_service_app/features/chat/presentation/pages/chat_thread_page.dart';
 import 'package:home_service_app/features/home/presentation/pages/account_page.dart';
@@ -72,8 +75,17 @@ final GoRouter appRouter = GoRouter(
       return isPublic ? null : '/login';
     }
 
-    // Logged in — leave boot / welcome / login / otp.
-    if (loc == '/boot' || loc == '/welcome') {
+    // Logged in — leave boot / login / otp; allow replay of product intro.
+    if (loc == '/boot' || loc == '/login' || loc == '/otp') {
+      if (AppConfig.forceOnboarding) return '/onboarding';
+      if (auth.user?.needsRole == true || auth.isNewUser) return '/role';
+      if (auth.user?.needsProviderOnboarding == true) return '/onboarding';
+      if (_providerAwaitingApproval(auth)) return '/provider-pending';
+      return '/search';
+    }
+    if (loc == '/welcome') {
+      final replay = state.uri.queryParameters['replay'] == '1';
+      if (replay) return null;
       if (AppConfig.forceOnboarding) return '/onboarding';
       if (auth.user?.needsRole == true || auth.isNewUser) return '/role';
       if (auth.user?.needsProviderOnboarding == true) return '/onboarding';
@@ -102,10 +114,15 @@ final GoRouter appRouter = GoRouter(
     final allowedWhilePending = loc == '/provider-pending' ||
         loc == '/account' ||
         loc == '/onboarding' ||
+        loc == '/welcome' ||
         loc.startsWith('/profiles') ||
         loc.startsWith('/page/') ||
         loc == '/wallet' ||
-        loc == '/verification';
+        loc == '/verification' ||
+        loc == '/blocked' ||
+        loc == '/favorites' ||
+        loc == '/notifications' ||
+        loc == '/reviews';
 
     if (awaiting && !allowedWhilePending) {
       return '/provider-pending';
@@ -124,7 +141,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/welcome',
-      builder: (_, __) => const WelcomeIntroPage(),
+      builder: (_, state) => WelcomeIntroPage(
+        replay: state.uri.queryParameters['replay'] == '1',
+      ),
     ),
     GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
     GoRoute(
@@ -152,6 +171,19 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/reviews',
       pageBuilder: (_, state) => _adaptivePage(state, const ReviewsPage()),
+    ),
+    GoRoute(
+      path: '/blocked',
+      pageBuilder: (_, state) => _adaptivePage(state, const BlockedUsersPage()),
+    ),
+    GoRoute(
+      path: '/favorites',
+      pageBuilder: (_, state) => _adaptivePage(state, const FavoritesPage()),
+    ),
+    GoRoute(
+      path: '/notifications',
+      pageBuilder: (_, state) =>
+          _adaptivePage(state, const NotificationsPage()),
     ),
     GoRoute(
       path: '/verification',

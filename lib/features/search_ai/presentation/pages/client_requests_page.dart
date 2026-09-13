@@ -169,9 +169,23 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                                               ),
                                               const SizedBox(height: 6),
                                               Text(
-                                                '${r.status} · ${t('requests.matches_count', params: {
+                                                [
+                                                  r.status,
+                                                  if (r.serviceWhenLabel != null)
+                                                    t(
+                                                      'requests.when',
+                                                      params: {
+                                                        'when':
+                                                            r.serviceWhenLabel!,
+                                                      },
+                                                    ),
+                                                  t(
+                                                    'requests.matches_count',
+                                                    params: {
                                                       'count': '$matchCount',
-                                                    })}',
+                                                    },
+                                                  ),
+                                                ].join(' · '),
                                                 style: const TextStyle(
                                                   color: AppColors.muted,
                                                   fontSize: 13,

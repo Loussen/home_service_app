@@ -4,12 +4,16 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:home_service_app/app/config/router.dart';
 import 'package:home_service_app/core/push/device_token_remote.dart';
+import 'package:home_service_app/core/push/local_push.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // No UI work here — opening the app is handled in PushService.
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await LocalPush.showFromRemote(message);
 }
 
 class PushService {
@@ -25,6 +29,8 @@ class PushService {
     if (kIsWeb) return;
     if (!await _ensureFirebase()) return;
 
+    await LocalPush.ensureInitialized();
+
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
     await messaging.setForegroundNotificationPresentationOptions(
@@ -34,6 +40,21 @@ class PushService {
     );
 
     _listenOnce();
+
+    if (Platform.isIOS) {
+      // FCM token needs APNs registration first (physical device / recent Simulator).
+      String? apns;
+      for (var i = 0; i < 10 && apns == null; i++) {
+        apns = await messaging.getAPNSToken();
+        if (apns == null) {
+          await Future<void>.delayed(const Duration(milliseconds: 400));
+        }
+      }
+      if (apns == null) {
+        debugPrint('[push] no APNs token yet (Push capability + Firebase APNs key?)');
+        return;
+      }
+    }
 
     try {
       _token = await messaging.getToken();
@@ -81,6 +102,10 @@ class PushService {
     if (_listening) return;
     _listening = true;
 
+    // Android: we show locally so largeIcon (app icon) appears on heads-up.
+    FirebaseMessaging.onMessage.listen((message) {
+      unawaited(LocalPush.showFromRemote(message));
+    });
     FirebaseMessaging.onMessageOpenedApp.listen(_openFromMessage);
     FirebaseMessaging.instance.getInitialMessage().then((msg) {
       if (msg != null) _openFromMessage(msg);
@@ -96,8 +121,21 @@ class PushService {
 
   void _openFromMessage(RemoteMessage message) {
     final type = message.data['type'];
+    final conversationId = message.data['conversation_id'];
+    if (type == 'chat_message' || type == 'chat_connect') {
+      if (conversationId != null && conversationId.isNotEmpty) {
+        appRouter.go('/chat/$conversationId');
+      } else {
+        appRouter.go('/chat');
+      }
+      return;
+    }
     if (type == 'new_job' || type == 'urgent_job') {
       appRouter.go('/search');
+      return;
+    }
+    if (type == 'admin') {
+      appRouter.go('/account');
     }
   }
 }

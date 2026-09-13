@@ -8,6 +8,7 @@ import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/auth/data/models/user_model.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
+import 'package:home_service_app/features/profile/domain/profile_repository.dart';
 import 'package:home_service_app/features/search_ai/data/models/service_request_model.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_cubit.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_state.dart';
@@ -785,6 +786,7 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
   bool _mapView = false;
   final _scroll = ScrollController();
   final _cardKeys = <int, GlobalKey>{};
+  final _favoriteOverrides = <int, bool>{};
 
   @override
   void dispose() {
@@ -794,6 +796,39 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
 
   GlobalKey _keyFor(int providerId) =>
       _cardKeys.putIfAbsent(providerId, GlobalKey.new);
+
+  bool _isFavorite(MatchModel m) {
+    final id = m.provider?.id;
+    if (id == null) return false;
+    return _favoriteOverrides[id] ?? m.provider?.isFavorite ?? false;
+  }
+
+  Future<void> _toggleFavorite(MatchModel match) async {
+    final id = match.provider?.id;
+    if (id == null) return;
+    final next = !_isFavorite(match);
+    setState(() => _favoriteOverrides[id] = next);
+    final repo = getIt<ProfileRepository>();
+    final result = next
+        ? await repo.addFavorite(id)
+        : await repo.removeFavorite(id);
+    if (!mounted) return;
+    result.fold(
+      (f) {
+        setState(() => _favoriteOverrides[id] = !next);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(f.message)),
+        );
+      },
+      (_) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next ? t('favorites.added') : t('favorites.removed'),
+          ),
+        ),
+      ),
+    );
+  }
 
   void _selectProvider(int? providerId, {bool scrollToCard = false}) {
     setState(() => _selectedProviderId = providerId);
@@ -889,6 +924,10 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                   match: selected,
                   selected: true,
                   connecting: _connectingId == selected.provider?.id,
+                  isFavorite: _isFavorite(selected),
+                  onToggleFavorite: selected.provider == null
+                      ? null
+                      : () => _toggleFavorite(selected),
                   onOpenProfile: selected.provider == null
                       ? null
                       : () => _openProfile(selected),
@@ -999,6 +1038,9 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                   match: m,
                   selected: pid != null && pid == _selectedProviderId,
                   connecting: _connectingId == pid,
+                  isFavorite: _isFavorite(m),
+                  onToggleFavorite:
+                      m.provider == null ? null : () => _toggleFavorite(m),
                   onOpenProfile:
                       m.provider == null ? null : () => _openProfile(m),
                   onConnect: m.provider == null ? null : () => _connect(m),

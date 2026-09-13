@@ -9,6 +9,8 @@ class MatchCard extends StatelessWidget {
     required this.match,
     this.onConnect,
     this.onOpenProfile,
+    this.onToggleFavorite,
+    this.isFavorite = false,
     this.connecting = false,
     this.selected = false,
   });
@@ -16,6 +18,8 @@ class MatchCard extends StatelessWidget {
   final MatchModel match;
   final VoidCallback? onConnect;
   final VoidCallback? onOpenProfile;
+  final VoidCallback? onToggleFavorite;
+  final bool isFavorite;
   final bool connecting;
   final bool selected;
 
@@ -68,6 +72,23 @@ class MatchCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onToggleFavorite != null) ...[
+                    IconButton(
+                      tooltip: isFavorite
+                          ? t('favorites.toggle_remove')
+                          : t('favorites.toggle_add'),
+                      onPressed: onToggleFavorite,
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        isFavorite
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
+                        color: isFavorite
+                            ? AppColors.secondary
+                            : AppColors.muted,
+                      ),
+                    ),
+                  ],
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

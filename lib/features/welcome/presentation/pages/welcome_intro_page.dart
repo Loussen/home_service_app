@@ -6,9 +6,12 @@ import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/welcome/welcome_intro_storage.dart';
 
-/// First-launch explainer (voice → match → CONNECT). Skip once → login.
+/// First-launch explainer (voice → match → CONNECT). [replay] = reopen from Profile.
 class WelcomeIntroPage extends StatefulWidget {
-  const WelcomeIntroPage({super.key});
+  const WelcomeIntroPage({super.key, this.replay = false});
+
+  /// Opened from Account — finish pops back instead of going to login.
+  final bool replay;
 
   @override
   State<WelcomeIntroPage> createState() => _WelcomeIntroPageState();
@@ -52,6 +55,14 @@ class _WelcomeIntroPageState extends State<WelcomeIntroPage> {
   Future<void> _finish() async {
     await getIt<WelcomeIntroStorage>().markSeen();
     if (!mounted) return;
+    if (widget.replay) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/account');
+      }
+      return;
+    }
     context.go('/login');
   }
 
@@ -111,7 +122,9 @@ class _WelcomeIntroPageState extends State<WelcomeIntroPage> {
                     TextButton(
                       onPressed: _finish,
                       child: Text(
-                        t('welcome.skip'),
+                        widget.replay
+                            ? t('welcome.close')
+                            : t('welcome.skip'),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -163,7 +176,11 @@ class _WelcomeIntroPageState extends State<WelcomeIntroPage> {
                           ),
                         ),
                         child: Text(
-                          last ? t('welcome.start') : t('welcome.next'),
+                          last
+                              ? (widget.replay
+                                  ? t('welcome.done')
+                                  : t('welcome.start'))
+                              : t('welcome.next'),
                           style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 16,

@@ -1,5 +1,6 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
+import 'package:home_service_app/core/utils/request_when.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
 
@@ -105,6 +106,9 @@ class ServiceRequestModel {
   bool get isProcessing => status == 'processing';
   bool get isReady => status == 'active' || status == 'matched';
   bool get transcriptionFailed => parsedCriteria?['transcription_failed'] == true;
+
+  /// Desired service time from AI/manual filters (not created_at).
+  String? get serviceWhenLabel => formatRequestServiceWhen(parsedCriteria);
 
   Map<String, dynamic>? get searchMeta {
     final raw = parsedCriteria?['search_meta'];

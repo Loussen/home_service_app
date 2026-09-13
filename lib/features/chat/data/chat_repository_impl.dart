@@ -145,6 +145,25 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> unblockUser(int userId) async {
+    try {
+      await _remote.unblockUser(userId);
+      return const Right(unit);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BlockedUserModel>>> listBlockedUsers() async {
+    try {
+      return Right(await _remote.listBlockedUsers());
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
   Future<Either<Failure, Unit>> reportUser({
     required int reportedUserId,
     required String reason,

@@ -40,4 +40,10 @@ abstract class ProfileRepository {
 
   Future<Either<Failure, ({ProviderProfileModel profile, double balance})>>
       bump(int id);
+
+  Future<Either<Failure, List<ProviderProfileModel>>> listFavorites();
+
+  Future<Either<Failure, ProviderProfileModel>> addFavorite(int profileId);
+
+  Future<Either<Failure, Unit>> removeFavorite(int profileId);
 }

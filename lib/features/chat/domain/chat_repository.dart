@@ -41,6 +41,10 @@ abstract class ChatRepository {
 
   Future<Either<Failure, Unit>> blockUser(int userId);
 
+  Future<Either<Failure, Unit>> unblockUser(int userId);
+
+  Future<Either<Failure, List<BlockedUserModel>>> listBlockedUsers();
+
   Future<Either<Failure, Unit>> reportUser({
     required int reportedUserId,
     required String reason,

@@ -101,6 +101,19 @@ class ChatRemoteDataSource {
     await _client.dio.post('/users/$userId/block');
   }
 
+  Future<void> unblockUser(int userId) async {
+    await _client.dio.delete('/users/$userId/block');
+  }
+
+  Future<List<BlockedUserModel>> listBlockedUsers() async {
+    final res = await _client.dio.get('/blocks');
+    final list = res.data['data'] as List<dynamic>? ?? const [];
+    return list
+        .whereType<Map>()
+        .map((e) => BlockedUserModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
   Future<void> reportUser({
     required int reportedUserId,
     required String reason,

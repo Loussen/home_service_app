@@ -379,6 +379,27 @@ class _ChatTile extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (conversation.isBlocked) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.mist,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              t('chat.blocked_badge'),
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (time != null) ...[
                           const SizedBox(width: 8),
                           Text(
@@ -396,6 +417,20 @@ class _ChatTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    if (conversation.serviceRequest?.contextLine != null) ...[
+                      Text(
+                        conversation.serviceRequest!.contextLine!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                    ],
                     Row(
                       children: [
                         Expanded(
