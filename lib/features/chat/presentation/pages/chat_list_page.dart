@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/chat/data/models/conversation_model.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_list_cubit.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_list_state.dart';
@@ -15,7 +18,7 @@ class ChatListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<ChatListCubit>()..load(),
+      create: (_) => getIt<ChatListCubit>()..load()..startPolling(),
       child: const _ChatListView(),
     );
   }
@@ -28,14 +31,35 @@ class _ChatListView extends StatefulWidget {
   State<_ChatListView> createState() => _ChatListViewState();
 }
 
-class _ChatListViewState extends State<_ChatListView> {
+class _ChatListViewState extends State<_ChatListView>
+    with WidgetsBindingObserver {
   bool _archive = false;
   bool _searchOpen = false;
   final _searchCtrl = TextEditingController();
   String _query = '';
+  StreamSubscription<void>? _inboxSub;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _inboxSub = ChatInboxSignal.stream.listen((_) {
+      if (!mounted) return;
+      context.read<ChatListCubit>().refreshQuiet();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<ChatListCubit>().refreshQuiet();
+    }
+  }
 
   @override
   void dispose() {
+    _inboxSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _searchCtrl.dispose();
     super.dispose();
   }

@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/jobs/data/models/incoming_job_model.dart';
+import 'package:home_service_app/features/jobs/jobs_inbox_signal.dart';
 import 'package:home_service_app/features/jobs/presentation/cubit/jobs_cubit.dart';
 import 'package:home_service_app/features/jobs/presentation/cubit/jobs_state.dart';
 import 'package:home_service_app/features/jobs/presentation/widgets/job_detail_sheet.dart';
@@ -16,14 +20,85 @@ class JobsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<JobsCubit>()..load(),
+      create: (_) => getIt<JobsCubit>()..load()..startPolling(),
       child: const _JobsView(),
     );
   }
 }
 
-class _JobsView extends StatelessWidget {
+class _JobsView extends StatefulWidget {
   const _JobsView();
+
+  @override
+  State<_JobsView> createState() => _JobsViewState();
+}
+
+class _JobsViewState extends State<_JobsView> with WidgetsBindingObserver {
+  StreamSubscription<void>? _inboxSub;
+  bool _openingPending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _inboxSub = JobsInboxSignal.stream.listen((_) async {
+      if (!mounted) return;
+      await context.read<JobsCubit>().refreshQuiet();
+      if (mounted) _tryOpenPendingJob();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _tryOpenPendingJob();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<JobsCubit>().refreshQuiet().then((_) {
+        if (mounted) _tryOpenPendingJob();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _inboxSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  IncomingJobModel? _findJob(
+    List<IncomingJobModel> items,
+    JobsOpenTarget target,
+  ) {
+    if (target.matchId != null && target.matchId! > 0) {
+      for (final job in items) {
+        if (job.matchId == target.matchId) return job;
+      }
+    }
+    if (target.requestId != null && target.requestId! > 0) {
+      for (final job in items) {
+        if (job.requestId == target.requestId) return job;
+      }
+    }
+    return null;
+  }
+
+  void _tryOpenPendingJob() {
+    if (!mounted || _openingPending) return;
+    final pending = JobsInboxSignal.peekPending();
+    if (pending == null || !pending.hasTarget) return;
+    final cubit = context.read<JobsCubit>();
+    if (cubit.state.loading) return;
+    final job = _findJob(cubit.state.items, pending);
+    if (job == null) return;
+    JobsInboxSignal.clearPending();
+    _openingPending = true;
+    final busy = cubit.state.replyingId == job.matchId;
+    _openDetail(context, job: job, busy: busy).whenComplete(() {
+      _openingPending = false;
+    });
+  }
 
   Future<void> _openDetail(
     BuildContext context, {
@@ -75,27 +150,37 @@ class _JobsView extends StatelessWidget {
                       SnackBar(content: Text(state.message!)),
                     );
                   }
+                  if (!state.loading) {
+                    _tryOpenPendingJob();
+                  }
                 },
                 builder: (context, state) {
                   if (state.loading && state.items.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (state.items.isEmpty) {
-                    return Center(
-                      child: Padding(
+                    return RefreshIndicator(
+                      color: AppColors.primary,
+                      onRefresh: () => context.read<JobsCubit>().load(),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(32),
-                        child: Text(
-                          t('jobs.empty'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            height: 1.4,
+                        children: [
+                          const SizedBox(height: 80),
+                          Text(
+                            t('jobs.empty'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              height: 1.4,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     );
                   }
                   return RefreshIndicator(
+                    color: AppColors.primary,
                     onRefresh: () => context.read<JobsCubit>().load(),
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -173,6 +258,19 @@ class _JobCard extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
+                  if (job.requestStatus != null &&
+                      job.requestStatus!.isNotEmpty) ...[
+                    _statusChip(requestStatusLabel(job.requestStatus)),
+                    const SizedBox(width: 6),
+                    _lifecycleChip(
+                      requestLifecycleLabel(
+                        job.requestStatus,
+                        job.expiresAt,
+                      ),
+                      live: isRequestLive(job.requestStatus, job.expiresAt),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                   if (job.hasAudio) ...[
                     const Icon(
                       Icons.mic_none_rounded,
@@ -207,6 +305,41 @@ class _JobCard extends StatelessWidget {
                   style: const TextStyle(height: 1.3),
                 ),
               ],
+              Builder(
+                builder: (_) {
+                  final created = formatIsoDateTime(job.createdAt);
+                  final expires = formatIsoDateTime(job.expiresAt);
+                  if (created == null && expires == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (created != null)
+                          Text(
+                            t('jobs.created_at', params: {'when': created}),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        if (expires != null) ...[
+                          if (created != null) const SizedBox(height: 2),
+                          Text(
+                            t('jobs.expires_at', params: {'when': expires}),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -226,7 +359,7 @@ class _JobCard extends StatelessWidget {
                       ),
                     ),
                   if (job.isUrgent) _chip(t('search.urgent_title')),
-                  if (job.address != null) _chip(job.address!),
+                  if (job.displayPlace != null) _chip(job.displayPlace!),
                 ],
               ),
               const SizedBox(height: 8),
@@ -248,6 +381,46 @@ class _JobCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.mist,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _lifecycleChip(String label, {required bool live}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: live ? const Color(0xFFE8F3EA) : AppColors.parchment,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: live ? AppColors.published : AppColors.divider,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: live ? AppColors.published : AppColors.muted,
         ),
       ),
     );

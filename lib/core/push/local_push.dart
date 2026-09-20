@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+typedef LocalPushTap = void Function(Map<String, String> data);
+
 /// Android heads-up: Sancho silhouette smallIcon + color largeIcon when available.
 class LocalPush {
   LocalPush._();
@@ -20,11 +22,22 @@ class LocalPush {
 
   static bool _ready = false;
   static Uint8List? _logoBytes;
+  static LocalPushTap? _onTap;
+  static Map<String, String>? _pendingLaunchData;
 
-  static Future<void> ensureInitialized() async {
-    if (kIsWeb || _ready) return;
+  static Future<void> ensureInitialized({LocalPushTap? onTap}) async {
+    if (kIsWeb) return;
+    if (onTap != null) {
+      _onTap = onTap;
+    }
+
     if (!Platform.isAndroid) {
       _ready = true;
+      return;
+    }
+
+    if (_ready) {
+      // Re-bind tap if caller provided one after background isolate init.
       return;
     }
 
@@ -32,6 +45,7 @@ class LocalPush {
         AndroidInitializationSettings('@drawable/ic_stat_mysancho');
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidInit),
+      onDidReceiveNotificationResponse: _onNotificationResponse,
     );
 
     final android = _plugin.resolvePlatformSpecificImplementation<
@@ -51,7 +65,25 @@ class LocalPush {
       _logoBytes ??=
           (await rootBundle.load(_logoAsset)).buffer.asUint8List();
     } catch (_) {}
+
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      _pendingLaunchData = _decodePayload(launch?.notificationResponse?.payload);
+    }
+
     _ready = true;
+  }
+
+  static Map<String, String>? takePendingLaunchData() {
+    final data = _pendingLaunchData;
+    _pendingLaunchData = null;
+    return data;
+  }
+
+  static Future<void> cancelAll() async {
+    if (kIsWeb || !Platform.isAndroid) return;
+    if (!_ready) return;
+    await _plugin.cancelAll();
   }
 
   static Future<void> showFromRemote(RemoteMessage message) async {
@@ -77,6 +109,10 @@ class LocalPush {
       } catch (_) {}
     }
 
+    final data = <String, String>{
+      for (final e in message.data.entries) e.key: '${e.value}',
+    };
+
     await _plugin.show(
       id: id,
       title: title,
@@ -93,7 +129,31 @@ class LocalPush {
           color: _brandNavy,
         ),
       ),
-      payload: jsonEncode(message.data),
+      payload: jsonEncode(data),
     );
+  }
+
+  static void _onNotificationResponse(NotificationResponse response) {
+    final data = _decodePayload(response.payload);
+    if (data == null || data.isEmpty) return;
+    final tap = _onTap;
+    if (tap != null) {
+      tap(data);
+    } else {
+      _pendingLaunchData = data;
+    }
+  }
+
+  static Map<String, String>? _decodePayload(String? payload) {
+    if (payload == null || payload.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map) return null;
+      return {
+        for (final e in decoded.entries) '${e.key}': '${e.value}',
+      };
+    } catch (_) {
+      return null;
+    }
   }
 }

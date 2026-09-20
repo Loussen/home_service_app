@@ -176,6 +176,8 @@ class AppRemoteConfig {
         'Uyğun icraçı tapılmadı.\nRadiusu genişləndirin və ya digər vaxt seçin.',
     'search.transcript_failed':
         'Səs oxunmadı. Eyni mətni yazıb yenidən göndərin.',
+    'search.missing_category':
+        'Kateqoriya başa düşülmədi. Mətni düzəldib yenidən göndərin və ya əl ilə kateqoriya seçin.',
     'search.meta.expanded': 'Radius {from} km-dən {to} km-ə genişləndi.',
     'search.meta.dropped_category':
         'Bu kateqoriyada tapılmadı — yaxın digər icraçılar göstərilir.',
@@ -211,9 +213,11 @@ class AppRemoteConfig {
     'search.slot.evening': 'Axşam',
     'search.slot.night': 'Gecə',
     'request.status.processing': 'Emal olunur',
+    'request.status.active': 'Aktiv',
     'request.status.matched': 'Uyğunlaşıb',
     'request.status.completed': 'Tamamlanıb',
     'request.status.cancelled': 'Ləğv edilib',
+    'request.status.expired': 'Müddəti bitib',
     'category.label': 'Kateqoriyalar',
     'category.max_reached': 'Maksimum {max} kateqoriya',
     'category.selected_count': 'Seçilib {count}/{max}',
@@ -428,11 +432,16 @@ class AppRemoteConfig {
     'jobs.audio_hint': 'Müştərinin yazdığı orijinal səs',
     'jobs.created_at': 'Yaradılıb: {when}',
     'jobs.expires_at': 'Bitir: {when}',
+    'jobs.badge.active': 'Aktiv',
+    'jobs.badge.inactive': 'Deaktiv',
     'requests.empty':
         'Hələ sorğu yoxdur.\nAxtar tabında səs və ya mətn göndərin.',
     'requests.item_fallback': 'Sorğu #{id}',
     'requests.matches_count': '{count} uyğunluq',
     'requests.when': 'Vaxt: {when}',
+    'requests.audio_play': 'Səsli sorğunu dinlə',
+    'requests.audio_stop': 'Dayandır',
+    'requests.audio_hint': 'Sizin yazdığınız orijinal səs',
     'requests.duration_hours': '{hours} saat',
     'web.requests.filter_all': 'Hamısı',
     'web.requests.filter_matched': 'Uyğunlaşan',

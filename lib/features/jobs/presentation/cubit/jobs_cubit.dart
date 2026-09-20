@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_service_app/features/chat/data/models/conversation_model.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
@@ -10,6 +12,10 @@ class JobsCubit extends Cubit<JobsState> {
 
   final JobsRepository _jobs;
   final ChatRepository _chat;
+  Timer? _poll;
+  bool _refreshing = false;
+
+  static const _pollInterval = Duration(seconds: 8);
 
   Future<void> load() async {
     emit(state.copyWith(loading: true, clearMessage: true));
@@ -18,6 +24,33 @@ class JobsCubit extends Cubit<JobsState> {
       (f) => emit(state.copyWith(loading: false, message: f.message)),
       (items) => emit(state.copyWith(loading: false, items: items)),
     );
+  }
+
+  Future<void> refreshQuiet() async {
+    if (_refreshing || state.loading || isClosed) return;
+    _refreshing = true;
+    try {
+      final result = await _jobs.list();
+      if (isClosed) return;
+      result.fold(
+        (_) {},
+        (items) => emit(state.copyWith(items: items, clearMessage: true)),
+      );
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  void startPolling() {
+    _poll?.cancel();
+    _poll = Timer.periodic(_pollInterval, (_) {
+      unawaited(refreshQuiet());
+    });
+  }
+
+  void stopPolling() {
+    _poll?.cancel();
+    _poll = null;
   }
 
   Future<ConversationModel?> reply(IncomingJobModel job) async {
@@ -38,5 +71,11 @@ class JobsCubit extends Cubit<JobsState> {
         return c;
       },
     );
+  }
+
+  @override
+  Future<void> close() {
+    stopPolling();
+    return super.close();
   }
 }

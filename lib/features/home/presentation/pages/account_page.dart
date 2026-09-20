@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,7 @@ import 'package:home_service_app/features/home/presentation/widgets/profile_comp
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
 import 'package:home_service_app/features/auth/presentation/widgets/logout_confirm.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -209,7 +212,7 @@ class AccountPage extends StatelessWidget {
         final rejected = user?.isProviderRejected == true;
         final approved = user?.isProvider == true &&
             user?.providerApprovalStatus == 'approved';
-        final showApproval = pending || rejected || approved;
+        final showStickyApproval = pending || rejected;
 
         return Scaffold(
           backgroundColor: AppColors.canvas,
@@ -226,7 +229,7 @@ class AccountPage extends StatelessWidget {
                           color: AppColors.primary,
                         ),
                   ),
-                  if (showApproval) ...[
+                  if (showStickyApproval) ...[
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -234,9 +237,7 @@ class AccountPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: rejected
                             ? AppColors.primary.withValues(alpha: 0.08)
-                            : approved
-                                ? AppColors.sageSoft
-                                : AppColors.mist,
+                            : AppColors.mist,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.divider),
                       ),
@@ -244,12 +245,13 @@ class AccountPage extends StatelessWidget {
                         user?.providerApprovalMessage ??
                             (rejected
                                 ? t('provider.approval.rejected')
-                                : approved
-                                    ? t('provider.approval.approved')
-                                    : t('provider.approval.pending')),
+                                : t('provider.approval.pending')),
                         style: const TextStyle(height: 1.4),
                       ),
                     ),
+                  ] else if (approved && user != null) ...[
+                    const SizedBox(height: 12),
+                    _DismissibleApprovedBanner(user: user),
                   ],
                   const SizedBox(height: 16),
                   Container(
@@ -607,6 +609,97 @@ class _PastelCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DismissibleApprovedBanner extends StatefulWidget {
+  const _DismissibleApprovedBanner({required this.user});
+
+  final UserModel user;
+
+  @override
+  State<_DismissibleApprovedBanner> createState() =>
+      _DismissibleApprovedBannerState();
+}
+
+class _DismissibleApprovedBannerState
+    extends State<_DismissibleApprovedBanner> {
+  bool _hidden = false;
+  int? _loadedFor;
+
+  String _dismissKey(int userId) => 'provider_approved_banner_v1_$userId';
+
+  Future<void> _load() async {
+    final userId = widget.user.id;
+    if (_loadedFor == userId) return;
+    _loadedFor = userId;
+    final prefs = await SharedPreferences.getInstance();
+    final hidden = prefs.getBool(_dismissKey(userId)) ?? false;
+    if (!mounted || _loadedFor != userId) return;
+    if (hidden != _hidden) {
+      setState(() => _hidden = hidden);
+    }
+  }
+
+  Future<void> _dismiss() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dismissKey(widget.user.id), true);
+    if (mounted) setState(() => _hidden = true);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void didUpdateWidget(covariant _DismissibleApprovedBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id) {
+      _hidden = false;
+      _loadedFor = null;
+      unawaited(_load());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadedFor != widget.user.id) {
+      unawaited(_load());
+    }
+    if (_hidden) return const SizedBox.shrink();
+
+    final message = widget.user.providerApprovalMessage?.trim().isNotEmpty == true
+        ? widget.user.providerApprovalMessage!
+        : t('provider.approval.approved');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+      decoration: BoxDecoration(
+        color: AppColors.sageSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 4),
+              child: Text(message, style: const TextStyle(height: 1.4)),
+            ),
+          ),
+          IconButton(
+            tooltip: t('onboarding.banner.dismiss'),
+            onPressed: _dismiss,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close, size: 18, color: AppColors.muted),
+          ),
+        ],
       ),
     );
   }

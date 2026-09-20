@@ -5,9 +5,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:home_service_app/app/config/router.dart';
 import 'package:home_service_app/core/push/device_token_remote.dart';
 import 'package:home_service_app/core/push/local_push.dart';
+import 'package:home_service_app/core/push/push_router.dart';
+import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
+import 'package:home_service_app/features/jobs/jobs_inbox_signal.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -29,7 +31,8 @@ class PushService {
     if (kIsWeb) return;
     if (!await _ensureFirebase()) return;
 
-    await LocalPush.ensureInitialized();
+    await LocalPush.ensureInitialized(onTap: PushRouter.open);
+    unawaited(PushRouter.clearBadge());
 
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
@@ -75,6 +78,14 @@ class PushService {
     } catch (e) {
       debugPrint('[push] register API failed: $e');
     }
+
+    // Cold start from Android local notification (data-only FCM).
+    final pending = LocalPush.takePendingLaunchData();
+    if (pending != null && pending.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PushRouter.open(pending);
+      });
+    }
   }
 
   Future<void> unregister() async {
@@ -105,10 +116,36 @@ class PushService {
     // Android: we show locally so largeIcon (app icon) appears on heads-up.
     FirebaseMessaging.onMessage.listen((message) {
       unawaited(LocalPush.showFromRemote(message));
+      final type = '${message.data['type'] ?? ''}';
+      if (type == 'chat_message' || type == 'chat_connect') {
+        ChatInboxSignal.ping();
+      }
+      if (type == 'new_job' || type == 'urgent_job') {
+        JobsInboxSignal.ping(
+          matchId: int.tryParse('${message.data['match_id'] ?? ''}'),
+          requestId: int.tryParse('${message.data['request_id'] ?? ''}'),
+        );
+      }
     });
-    FirebaseMessaging.onMessageOpenedApp.listen(_openFromMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      final type = '${message.data['type'] ?? ''}';
+      if (type == 'chat_message' || type == 'chat_connect') {
+        ChatInboxSignal.ping();
+      }
+      if (type == 'new_job' || type == 'urgent_job') {
+        JobsInboxSignal.ping(
+          matchId: int.tryParse('${message.data['match_id'] ?? ''}'),
+          requestId: int.tryParse('${message.data['request_id'] ?? ''}'),
+        );
+      }
+      PushRouter.openFromDynamic(message.data);
+    });
     FirebaseMessaging.instance.getInitialMessage().then((msg) {
-      if (msg != null) _openFromMessage(msg);
+      if (msg != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          PushRouter.openFromDynamic(msg.data);
+        });
+      }
     });
     FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
       _token = token;
@@ -117,25 +154,5 @@ class PushService {
         await _remote.register(token: token, platform: platform);
       } catch (_) {}
     });
-  }
-
-  void _openFromMessage(RemoteMessage message) {
-    final type = message.data['type'];
-    final conversationId = message.data['conversation_id'];
-    if (type == 'chat_message' || type == 'chat_connect') {
-      if (conversationId != null && conversationId.isNotEmpty) {
-        appRouter.go('/chat/$conversationId');
-      } else {
-        appRouter.go('/chat');
-      }
-      return;
-    }
-    if (type == 'new_job' || type == 'urgent_job') {
-      appRouter.go('/search');
-      return;
-    }
-    if (type == 'admin') {
-      appRouter.go('/account');
-    }
   }
 }

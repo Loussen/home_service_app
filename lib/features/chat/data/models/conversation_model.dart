@@ -327,7 +327,7 @@ class ConversationModel {
       serviceRequest: srJson != null
           ? ConversationRequestSummary.fromJson(srJson)
           : null,
-      unreadCount: json['unread_count'] as int? ?? 0,
+      unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
       canSendOffer: json['can_send_offer'] as bool? ?? false,
       isBlocked: isBlocked,
       blockedByMe: json['blocked_by_me'] == true,

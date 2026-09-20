@@ -1,4 +1,5 @@
 import 'package:home_service_app/core/utils/media_url.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/core/utils/request_when.dart';
 import 'package:home_service_app/features/search_ai/data/models/service_request_model.dart';
 
@@ -47,6 +48,10 @@ class IncomingJobModel {
 
   String? get serviceWhenLabel => formatRequestServiceWhen(parsedCriteria);
 
+  /// Spoken/parsed place only — not the family's reverse-geocoded GPS pin.
+  String? get displayPlace =>
+      displayRequestPlace(parsedCriteria, address);
+
   bool get hasAudio => audioUrl != null && audioUrl!.trim().isNotEmpty;
 
   factory IncomingJobModel.fromJson(Map<String, dynamic> json) {
@@ -64,10 +69,10 @@ class IncomingJobModel {
         : <MatchReason>[];
 
     return IncomingJobModel(
-      matchId: json['match_id'] as int,
+      matchId: (json['match_id'] as num?)?.toInt() ?? 0,
       matchScore: (json['match_score'] as num?)?.toDouble() ?? 0,
       distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0,
-      providerProfileId: json['provider_profile_id'] as int,
+      providerProfileId: (json['provider_profile_id'] as num?)?.toInt() ?? 0,
       isUrgent: json['is_urgent'] == true,
       profileTitle: json['profile_title'] as String?,
       requestId: request?['id'] as int?,

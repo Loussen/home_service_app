@@ -1,5 +1,7 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/json_numbers.dart';
+import 'package:home_service_app/core/utils/media_url.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/core/utils/request_when.dart';
 import 'package:home_service_app/features/profile/data/models/category_model.dart';
 import 'package:home_service_app/features/profile/data/models/provider_profile_model.dart';
@@ -83,9 +85,11 @@ class ServiceRequestModel {
     this.parsedCriteria,
     this.isUrgent = false,
     this.address,
+    this.audioUrl,
     this.matches = const [],
     this.matchesCount,
     this.createdAt,
+    this.expiresAt,
   });
 
   final int id;
@@ -97,18 +101,26 @@ class ServiceRequestModel {
   final double latitude;
   final double longitude;
   final String? address;
+  final String? audioUrl;
   final String status;
   final List<MatchModel> matches;
   /// List endpoint may omit `matches` but still send a count.
   final int? matchesCount;
   final String? createdAt;
+  final String? expiresAt;
 
   bool get isProcessing => status == 'processing';
   bool get isReady => status == 'active' || status == 'matched';
   bool get transcriptionFailed => parsedCriteria?['transcription_failed'] == true;
+  bool get missingCategory => parsedCriteria?['missing_category'] == true;
+  bool get hasAudio => audioUrl != null && audioUrl!.trim().isNotEmpty;
 
   /// Desired service time from AI/manual filters (not created_at).
   String? get serviceWhenLabel => formatRequestServiceWhen(parsedCriteria);
+
+  /// Spoken/parsed place only — not the family's reverse-geocoded GPS pin.
+  String? get displayPlace =>
+      displayRequestPlace(parsedCriteria, address);
 
   Map<String, dynamic>? get searchMeta {
     final raw = parsedCriteria?['search_meta'];
@@ -121,8 +133,8 @@ class ServiceRequestModel {
     final matchesJson = json['matches'] as List<dynamic>? ?? [];
 
     return ServiceRequestModel(
-      id: json['id'] as int,
-      categoryId: json['category_id'] as int?,
+      id: (json['id'] as num).toInt(),
+      categoryId: (json['category_id'] as num?)?.toInt(),
       category:
           categoryJson != null ? CategoryModel.fromJson(categoryJson) : null,
       transcribedText: json['transcribed_text'] as String?,
@@ -131,12 +143,16 @@ class ServiceRequestModel {
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       address: json['address'] as String?,
+      audioUrl: resolveMediaUrl(
+        json['audio_url'] as String? ?? json['raw_audio_url'] as String?,
+      ),
       status: json['status'] as String? ?? 'active',
       matches: matchesJson
           .map((e) => MatchModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      matchesCount: json['matches_count'] as int?,
+      matchesCount: (json['matches_count'] as num?)?.toInt(),
       createdAt: json['created_at'] as String?,
+      expiresAt: json['expires_at'] as String?,
     );
   }
 }

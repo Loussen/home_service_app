@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/config/app_config.dart';
 import 'package:home_service_app/app/di/injection.dart';
@@ -18,6 +19,7 @@ import 'package:home_service_app/features/search_ai/presentation/widgets/search_
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_filters_panel.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_voice_prompt_player.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/request_ttl_confirm.dart';
+import 'package:home_service_app/features/search_ai/presentation/widgets/request_audio_player.dart';
 
 class SearchAiPage extends StatelessWidget {
   const SearchAiPage({super.key});
@@ -956,6 +958,10 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
             ),
             const SizedBox(height: 8),
           ],
+          if (request.hasAudio) ...[
+            RequestAudioPlayer(audioUrl: request.audioUrl!),
+            const SizedBox(height: 12),
+          ],
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1023,7 +1029,9 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                 child: Text(
                   request.transcriptionFailed
                       ? t('search.transcript_failed')
-                      : t('search.no_matches'),
+                      : request.missingCategory
+                          ? t('search.missing_category')
+                          : t('search.no_matches'),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -1144,14 +1152,7 @@ List<Widget> _searchMetaBanners(
 }
 
 String _statusAz(String status) {
-  return switch (status) {
-    'processing' => t('request.status.processing'),
-    'active' => 'Aktiv',
-    'matched' => t('request.status.matched'),
-    'completed' => t('request.status.completed'),
-    'cancelled' => t('request.status.cancelled'),
-    _ => status,
-  };
+  return requestStatusLabel(status);
 }
 
 class _ResultChip extends StatelessWidget {

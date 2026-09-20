@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/features/search_ai/data/models/service_request_model.dart';
 import 'package:home_service_app/features/search_ai/domain/search_repository.dart';
 
@@ -155,22 +156,181 @@ class _ClientRequestsPageState extends State<ClientRequestsPage> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                r.transcribedText ??
-                                                    t(
-                                                      'requests.item_fallback',
-                                                      params: {
-                                                        'id': '${r.id}',
-                                                      },
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      r.transcribedText ??
+                                                          t(
+                                                            'requests.item_fallback',
+                                                            params: {
+                                                              'id': '${r.id}',
+                                                            },
+                                                          ),
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
                                                     ),
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 3,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.mist,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              999),
+                                                      border: Border.all(
+                                                        color:
+                                                            AppColors.divider,
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      requestStatusLabel(
+                                                          r.status),
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Builder(
+                                                    builder: (_) {
+                                                      final live = isRequestLive(
+                                                        r.status,
+                                                        r.expiresAt,
+                                                      );
+                                                      return Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3,
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: live
+                                                              ? const Color(
+                                                                  0xFFE8F3EA)
+                                                              : AppColors
+                                                                  .parchment,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      999),
+                                                          border: Border.all(
+                                                            color: live
+                                                                ? AppColors
+                                                                    .published
+                                                                : AppColors
+                                                                    .divider,
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          requestLifecycleLabel(
+                                                            r.status,
+                                                            r.expiresAt,
+                                                          ),
+                                                          style: TextStyle(
+                                                            fontSize: 11,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w800,
+                                                            color: live
+                                                                ? AppColors
+                                                                    .published
+                                                                : AppColors
+                                                                    .muted,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ],
                                               ),
                                               const SizedBox(height: 6),
+                                              Builder(
+                                                builder: (_) {
+                                                  final created =
+                                                      formatIsoDateTime(
+                                                          r.createdAt);
+                                                  final expires =
+                                                      formatIsoDateTime(
+                                                          r.expiresAt);
+                                                  if (created == null &&
+                                                      expires == null) {
+                                                    return const SizedBox
+                                                        .shrink();
+                                                  }
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            bottom: 4),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        if (created != null)
+                                                          Text(
+                                                            t(
+                                                              'jobs.created_at',
+                                                              params: {
+                                                                'when': created,
+                                                              },
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                              color: AppColors
+                                                                  .muted,
+                                                              fontSize: 12.5,
+                                                            ),
+                                                          ),
+                                                        if (expires != null) ...[
+                                                          if (created != null)
+                                                            const SizedBox(
+                                                                height: 2),
+                                                          Text(
+                                                            t(
+                                                              'jobs.expires_at',
+                                                              params: {
+                                                                'when': expires,
+                                                              },
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                              color: AppColors
+                                                                  .muted,
+                                                              fontSize: 12.5,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                              if (r.displayPlace != null) ...[
+                                                Text(
+                                                  r.displayPlace!,
+                                                  style: const TextStyle(
+                                                    color: AppColors.muted,
+                                                    fontSize: 12.5,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                              ],
                                               Text(
                                                 [
-                                                  r.status,
                                                   if (r.serviceWhenLabel != null)
                                                     t(
                                                       'requests.when',

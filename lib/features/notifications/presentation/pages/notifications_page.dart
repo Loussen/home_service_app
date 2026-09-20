@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/push/push_router.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/notifications/data/notifications_remote_data_source.dart';
 import 'package:home_service_app/features/notifications/domain/notifications_repository.dart';
@@ -51,16 +51,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
     if (!mounted) return;
 
-    final type = item.type;
-    final conversationId = item.payload['conversation_id'];
-    if ((type == 'chat_message' || type == 'chat_connect') &&
-        conversationId != null &&
-        conversationId.isNotEmpty) {
-      context.push('/chat/$conversationId');
-      return;
-    }
-    if (type == 'new_job' || type == 'urgent_job') {
-      context.go('/search');
+    final data = <String, String>{
+      'type': item.type,
+      ...item.payload,
+    };
+    if (data['type'] == 'chat_message' ||
+        data['type'] == 'chat_connect' ||
+        data['type'] == 'new_job' ||
+        data['type'] == 'urgent_job' ||
+        data['type'] == 'admin') {
+      PushRouter.open(data);
       return;
     }
     setState(_reload);

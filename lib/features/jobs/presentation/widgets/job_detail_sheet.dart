@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/features/jobs/data/models/incoming_job_model.dart';
 
 Future<void> showJobDetailSheet(
@@ -157,6 +158,59 @@ class _JobDetailSheetState extends State<_JobDetailSheet> {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            if (job.requestStatus != null &&
+                job.requestStatus!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _StatusPill(label: requestStatusLabel(job.requestStatus)),
+                  _StatusPill(
+                    label: requestLifecycleLabel(
+                      job.requestStatus,
+                      job.expiresAt,
+                    ),
+                    live: isRequestLive(job.requestStatus, job.expiresAt),
+                  ),
+                ],
+              ),
+            ],
+            Builder(
+              builder: (_) {
+                final created = _formatIso(job.createdAt);
+                final expires = _formatIso(job.expiresAt);
+                if (created == null && expires == null) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (created != null)
+                        Text(
+                          t('jobs.created_at', params: {'when': created}),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                      if (expires != null) ...[
+                        if (created != null) const SizedBox(height: 2),
+                        Text(
+                          t('jobs.expires_at', params: {'when': expires}),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 14),
             Flexible(
               child: SingleChildScrollView(
@@ -273,22 +327,8 @@ class _JobDetailSheetState extends State<_JobDetailSheet> {
                             label: t('search.urgent_title'),
                             accent: true,
                           ),
-                        if (job.address != null)
-                          _DetailChip(label: job.address!),
-                        if (_formatIso(job.createdAt) != null)
-                          _DetailChip(
-                            label: t(
-                              'jobs.created_at',
-                              params: {'when': _formatIso(job.createdAt)!},
-                            ),
-                          ),
-                        if (_formatIso(job.expiresAt) != null)
-                          _DetailChip(
-                            label: t(
-                              'jobs.expires_at',
-                              params: {'when': _formatIso(job.expiresAt)!},
-                            ),
-                          ),
+                        if (job.displayPlace != null)
+                          _DetailChip(label: job.displayPlace!),
                       ],
                     ),
                     if (job.reasons.isNotEmpty) ...[
@@ -346,6 +386,43 @@ class _JobDetailSheetState extends State<_JobDetailSheet> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, this.live});
+
+  final String label;
+  final bool? live;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLifecycle = live != null;
+    final isLive = live == true;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isLifecycle
+            ? (isLive ? const Color(0xFFE8F3EA) : AppColors.parchment)
+            : AppColors.mist,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isLifecycle
+              ? (isLive ? AppColors.published : AppColors.divider)
+              : AppColors.divider,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: isLifecycle
+              ? (isLive ? AppColors.published : AppColors.muted)
+              : AppColors.primary,
         ),
       ),
     );
