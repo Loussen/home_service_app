@@ -72,7 +72,7 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
     if (_updateChecked) return;
     _updateChecked = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(AppUpdateGate.maybePrompt());
+      unawaited(AppUpdateGate.resolve());
     });
   }
 
@@ -100,107 +100,115 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
             routerConfig: appRouter,
             builder: (context, child) {
               _scheduleUpdateCheck();
-              return MultiBlocListener(
-                listeners: [
-                  BlocListener<AuthCubit, AuthState>(
-                    listenWhen: (prev, next) =>
-                        prev.status == AuthStatus.authenticated &&
-                        next.status == AuthStatus.unauthenticated,
-                    listener: (context, state) {
-                      appRouter.go('/login');
-                    },
-                  ),
-                  BlocListener<AuthCubit, AuthState>(
-                    listenWhen: (prev, next) =>
-                        next.accountBlocked &&
-                        next.message != null &&
-                        next.message != prev.message,
-                    listener: (context, state) async {
-                      final msg = state.message;
-                      if (msg == null) return;
-                      await showDialog<void>(
-                        context: context,
-                        barrierDismissible: false,
-                        barrierColor: AppColors.ink.withValues(alpha: 0.45),
-                        builder: (ctx) => Dialog(
-                          backgroundColor: AppColors.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                            side: const BorderSide(color: AppColors.divider),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 56,
-                                  height: 56,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.peach,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.block_rounded,
-                                    color: AppColors.primary,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  t('web.auth.blocked_title'),
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(ctx)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  MultiBlocListener(
+                    listeners: [
+                      BlocListener<AuthCubit, AuthState>(
+                        listenWhen: (prev, next) =>
+                            prev.status == AuthStatus.authenticated &&
+                            next.status == AuthStatus.unauthenticated,
+                        listener: (context, state) {
+                          appRouter.go('/login');
+                        },
+                      ),
+                      BlocListener<AuthCubit, AuthState>(
+                        listenWhen: (prev, next) =>
+                            next.accountBlocked &&
+                            next.message != null &&
+                            next.message != prev.message,
+                        listener: (context, state) async {
+                          final msg = state.message;
+                          if (msg == null) return;
+                          await showDialog<void>(
+                            context: context,
+                            barrierDismissible: false,
+                            barrierColor: AppColors.ink.withValues(alpha: 0.45),
+                            builder: (ctx) => Dialog(
+                              backgroundColor: AppColors.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                side: const BorderSide(color: AppColors.divider),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.peach,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.block_rounded,
                                         color: AppColors.primary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  msg,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: AppColors.muted,
-                                    height: 1.45,
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                      context
-                                          .read<AuthCubit>()
-                                          .clearAccountBlockedFlag();
-                                    },
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
+                                        size: 28,
                                       ),
                                     ),
-                                    child: Text(t('web.alert.ok')),
-                                  ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      t('web.auth.blocked_title'),
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(ctx)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      msg,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: AppColors.muted,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 22),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: FilledButton(
+                                        onPressed: () {
+                                          Navigator.of(ctx).pop();
+                                          context
+                                              .read<AuthCubit>()
+                                              .clearAccountBlockedFlag();
+                                        },
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                          ),
+                                        ),
+                                        child: Text(t('web.alert.ok')),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                          );
+                        },
+                      ),
+                    ],
+                    child: LocaleRebuild(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
+                  const AppUpdateOverlay(),
                 ],
-                child: LocaleRebuild(
-                  child: child ?? const SizedBox.shrink(),
-                ),
               );
             },
             locale: Locale(localeCode),

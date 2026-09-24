@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/update/app_update_gate.dart';
 
 /// ElevenLabs clips for voice-search UX.
 ///
@@ -88,6 +89,10 @@ class SearchVoicePromptPlayer {
     void Function()? onStart,
     void Function()? onDone,
   }) async {
+    if (AppUpdateGate.isForceBlocked) {
+      onDone?.call();
+      return;
+    }
     if (_busy) return;
     _busy = true;
     final candidates = assetCandidates(kind);

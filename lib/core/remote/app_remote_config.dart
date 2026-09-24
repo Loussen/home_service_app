@@ -323,7 +323,11 @@ class AppRemoteConfig {
     'update.soft_body': 'Yeni versiya çıxıb. Daha yaxşı təcrübə üçün yeniləyin.',
     'update.force_title': 'Yeniləmə tələb olunur',
     'update.force_body':
-        'Bu versiya artıq dəstəklənmir. Davam etmək üçün App Store / Play Store-dan yeniləyin.',
+        'Bu versiya artıq dəstəklənmir. Davam etmək üçün mağazadan yeniləyin.',
+    'update.force_body_ios':
+        'Bu versiya artıq dəstəklənmir. Davam etmək üçün App Store-dan yeniləyin.',
+    'update.force_body_android':
+        'Bu versiya artıq dəstəklənmir. Davam etmək üçün Play Store-dan yeniləyin.',
     'update.action': 'Yenilə',
     'update.later': 'Sonra',
     'static_page.load_error': 'Səhifə yüklənmədi',

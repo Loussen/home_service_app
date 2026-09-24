@@ -20,6 +20,7 @@ import 'package:home_service_app/features/search_ai/presentation/widgets/search_
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_voice_prompt_player.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/request_ttl_confirm.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/request_audio_player.dart';
+import 'package:home_service_app/core/update/app_update_gate.dart';
 
 class SearchAiPage extends StatelessWidget {
   const SearchAiPage({super.key});
@@ -66,11 +67,25 @@ class _SearchAiViewState extends State<_SearchAiView>
       duration: const Duration(milliseconds: 1100),
     );
     _tabs.addListener(_onTabChanged);
+    AppUpdateGate.decision.addListener(_onForceUpdateChanged);
     // Small delay so route transition + audio session settle after boot → search.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future<void>.delayed(const Duration(milliseconds: 350), () {
         if (mounted) _maybePlayGreeting();
       });
+    });
+  }
+
+  void _onForceUpdateChanged() {
+    if (!AppUpdateGate.isForceBlocked) return;
+    _prompts.stop();
+    _logoPulse
+      ..stop()
+      ..value = 0;
+    if (!mounted) return;
+    setState(() {
+      _greetingPlaying = false;
+      _greetingDone = true;
     });
   }
 
@@ -90,6 +105,10 @@ class _SearchAiViewState extends State<_SearchAiView>
 
   Future<void> _maybePlayGreeting() async {
     if (!mounted || _greetingDone || _greetingPlaying) return;
+    if (AppUpdateGate.isForceBlocked) {
+      setState(() => _greetingDone = true);
+      return;
+    }
     if (!AppRemoteConfig.instance.flags.voiceSearch) {
       setState(() => _greetingDone = true);
       return;
@@ -138,6 +157,7 @@ class _SearchAiViewState extends State<_SearchAiView>
 
   @override
   void dispose() {
+    AppUpdateGate.decision.removeListener(_onForceUpdateChanged);
     _tabs.removeListener(_onTabChanged);
     _tabs.dispose();
     _micPulse.dispose();
