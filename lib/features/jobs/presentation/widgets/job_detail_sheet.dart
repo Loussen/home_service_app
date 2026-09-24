@@ -375,14 +375,18 @@ class _JobDetailSheetState extends State<_JobDetailSheet> {
             ),
             const SizedBox(height: 8),
             ElevatedButton(
-              onPressed: widget.busy
+              onPressed: widget.busy || !job.isLive
                   ? null
                   : () {
                       Navigator.of(context).pop();
                       widget.onReply();
                     },
               child: Text(
-                widget.busy ? t('jobs.reply_opening') : t('jobs.reply'),
+                widget.busy
+                    ? t('jobs.reply_opening')
+                    : job.isLive
+                        ? t('jobs.reply')
+                        : t('jobs.reply_expired'),
               ),
             ),
           ],

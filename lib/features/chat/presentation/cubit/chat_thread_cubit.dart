@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_thread_state.dart';
 
@@ -14,7 +15,11 @@ class ChatThreadCubit extends Cubit<ChatThreadState> {
     final result = await _repo.get(conversationId);
     result.fold(
       (f) => emit(state.copyWith(loading: false, message: f.message)),
-      (c) => emit(state.copyWith(loading: false, conversation: c)),
+      (c) {
+        emit(state.copyWith(loading: false, conversation: c));
+        // Opening a thread marks messages read on the server.
+        ChatInboxSignal.ping();
+      },
     );
   }
 

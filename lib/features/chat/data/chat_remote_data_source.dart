@@ -14,6 +14,15 @@ class ChatRemoteDataSource {
         .toList();
   }
 
+  Future<int> unreadCount() async {
+    final res = await _client.dio.get('/conversations/unread-count');
+    final data = res.data['data'];
+    if (data is Map) {
+      return (data['unread_count'] as num?)?.toInt() ?? 0;
+    }
+    return 0;
+  }
+
   Future<ConversationModel> get(int id) async {
     final res = await _client.dio.get('/conversations/$id');
     return ConversationModel.fromJson(res.data['data'] as Map<String, dynamic>);

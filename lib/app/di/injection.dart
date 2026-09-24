@@ -16,6 +16,7 @@ import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dar
 import 'package:home_service_app/features/chat/data/chat_remote_data_source.dart';
 import 'package:home_service_app/features/chat/data/chat_repository_impl.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
+import 'package:home_service_app/features/chat/chat_unread_badge.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_list_cubit.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_thread_cubit.dart';
 import 'package:home_service_app/features/jobs/data/jobs_remote_data_source.dart';
@@ -78,7 +79,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<ChatRepository>(
       () => ChatRepositoryImpl(getIt()),
     )
-    ..registerFactory(() => ChatListCubit(getIt()))
+    ..registerLazySingleton(() => ChatUnreadBadge(getIt<ChatRepository>()))
+    ..registerFactory(() => ChatListCubit(getIt(), getIt<ChatUnreadBadge>()))
     ..registerFactoryParam<ChatThreadCubit, int, void>(
       (id, _) => ChatThreadCubit(getIt(), conversationId: id),
     )

@@ -54,6 +54,9 @@ class IncomingJobModel {
 
   bool get hasAudio => audioUrl != null && audioUrl!.trim().isNotEmpty;
 
+  /// Still open for reply (not expired / finished).
+  bool get isLive => isRequestLive(requestStatus, expiresAt);
+
   factory IncomingJobModel.fromJson(Map<String, dynamic> json) {
     final request = json['request'] as Map<String, dynamic>?;
     final client = json['client'] as Map<String, dynamic>?;

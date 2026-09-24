@@ -434,6 +434,7 @@ class AppRemoteConfig {
     'jobs.expires_at': 'Bitir: {when}',
     'jobs.badge.active': 'Aktiv',
     'jobs.badge.inactive': 'Deaktiv',
+    'jobs.reply_expired': 'MÜDDƏTİ BITIB',
     'requests.empty':
         'Hələ sorğu yoxdur.\nAxtar tabında səs və ya mətn göndərin.',
     'requests.item_fallback': 'Sorğu #{id}',
@@ -470,6 +471,9 @@ class AppRemoteConfig {
     'chat.blocked_by_me_hint':
         'Bu istifadəçini bloklamısınız. Tarixçə açıqdır; mesaj üçün bloku götürün.',
     'chat.blocked_composer': 'Bloklanmış söhbətdə mesaj göndərmək olmur',
+    'chat.menu.view_request': 'Sorğuya bax',
+    'chat.request_sheet_title': 'Bu söhbətin sorğusu',
+    'chat.request_open_full': 'Tam sorğunu aç',
     'offer.title': 'Təklif',
     'offer.compose_title': 'Təklif göndər',
     'offer.pick_time': 'Tarix və saat seçin',

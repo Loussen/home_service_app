@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_service_app/app/config/auth_router_refresh.dart';
+import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/core/error/failures.dart';
 import 'package:home_service_app/core/network/api_client.dart';
 import 'package:home_service_app/core/push/push_service.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/auth/domain/auth_repository.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+import 'package:home_service_app/features/chat/chat_unread_badge.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit(this._repo, this._push, this._api) : super(const AuthState()) {
@@ -214,6 +216,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> logout() async {
     await _push.unregister();
+    getIt<ChatUnreadBadge>().setCount(0);
     emit(const AuthState(status: AuthStatus.unauthenticated));
     await _repo.logout();
   }

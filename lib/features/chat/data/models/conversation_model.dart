@@ -1,5 +1,6 @@
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/media_url.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/core/utils/request_when.dart';
 
 class ChatUserModel {
@@ -35,21 +36,38 @@ class ConversationRequestSummary {
     required this.id,
     this.transcribedText,
     this.address,
+    this.audioUrl,
+    this.status,
+    this.isUrgent = false,
+    this.categoryName,
+    this.createdAt,
+    this.expiresAt,
     this.parsedCriteria,
   });
 
   final int id;
   final String? transcribedText;
   final String? address;
+  final String? audioUrl;
+  final String? status;
+  final bool isUrgent;
+  final String? categoryName;
+  final String? createdAt;
+  final String? expiresAt;
   final Map<String, dynamic>? parsedCriteria;
+
+  bool get hasAudio => audioUrl != null && audioUrl!.trim().isNotEmpty;
+
+  String? get displayPlace =>
+      displayRequestPlace(parsedCriteria, address);
 
   String? get snippet {
     final text = transcribedText?.trim();
     if (text != null && text.isNotEmpty) {
       return text.length > 80 ? '${text.substring(0, 80)}…' : text;
     }
-    final addr = address?.trim();
-    if (addr != null && addr.isNotEmpty) return addr;
+    final place = displayPlace;
+    if (place != null && place.isNotEmpty) return place;
     return null;
   }
 
@@ -67,10 +85,20 @@ class ConversationRequestSummary {
 
   factory ConversationRequestSummary.fromJson(Map<String, dynamic> json) {
     final criteria = json['parsed_criteria'];
+    final category = json['category'] as Map<String, dynamic>?;
     return ConversationRequestSummary(
       id: json['id'] as int,
       transcribedText: json['transcribed_text'] as String?,
       address: json['address'] as String?,
+      audioUrl: resolveMediaUrl(
+        json['audio_url'] as String? ?? json['raw_audio_url'] as String?,
+      ),
+      status: json['status'] as String?,
+      isUrgent: json['is_urgent'] == true,
+      categoryName: category?['name'] as String? ??
+          category?['name_az'] as String?,
+      createdAt: json['created_at'] as String?,
+      expiresAt: json['expires_at'] as String?,
       parsedCriteria: criteria is Map<String, dynamic>
           ? criteria
           : (criteria is Map

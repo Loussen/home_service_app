@@ -6,6 +6,7 @@ import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_thread_cubit.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_thread_state.dart';
+import 'package:home_service_app/features/chat/presentation/widgets/chat_request_sheet.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/offer_card.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/offer_composer.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/review_composer.dart';
@@ -168,8 +169,8 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
             myId != null && conv != null && conv.providerId == myId;
         final canSendOffer = me?.isProvider == true &&
             isProviderParty &&
-            (conv?.canSendOffer ?? false) &&
-            (conv?.canMessage ?? true);
+            conv.canSendOffer &&
+            conv.canMessage;
         final isBlocked = conv?.isBlocked == true;
         final isProvider = isProviderParty;
         final title = conv?.otherUser?.displayName ??
@@ -211,14 +212,23 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                   ],
                 ),
                 if (requestContext != null)
-                  Text(
-                    requestContext,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                  GestureDetector(
+                    onTap: conv?.serviceRequest == null
+                        ? null
+                        : () => showChatRequestSheet(
+                              context,
+                              request: conv!.serviceRequest!,
+                              canOpenFull: isClient,
+                            ),
+                    child: Text(
+                      requestContext,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
                     ),
                   )
                 else if (phone != null && phone.isNotEmpty)
@@ -239,11 +249,22 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                   onPressed: state.sending ? null : () => _composeOffer(cubit),
                   icon: const Icon(Icons.request_quote_outlined),
                 ),
-              if (conv?.otherUser?.id != null)
+              if (conv?.otherUser?.id != null ||
+                  conv?.serviceRequest != null)
                 PopupMenuButton<String>(
                   enabled: !state.sending,
                   onSelected: (value) {
-                    final otherId = conv!.otherUser!.id;
+                    if (value == 'view_request' &&
+                        conv?.serviceRequest != null) {
+                      showChatRequestSheet(
+                        context,
+                        request: conv!.serviceRequest!,
+                        canOpenFull: isClient,
+                      );
+                      return;
+                    }
+                    final otherId = conv?.otherUser?.id;
+                    if (otherId == null) return;
                     if (value == 'report') {
                       _reportUser(cubit, otherId);
                     } else if (value == 'block') {
@@ -253,25 +274,32 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                         context,
                         cubit,
                         otherId,
-                        conv.otherUser!.displayName,
+                        conv!.otherUser!.displayName,
                       );
                     }
                   },
                   itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'report',
-                      child: Text(t('report.menu')),
-                    ),
-                    if (conv?.blockedByMe == true)
+                    if (conv?.serviceRequest != null)
                       PopupMenuItem(
-                        value: 'unblock',
-                        child: Text(t('block.unblock_action')),
-                      )
-                    else if (conv?.isBlocked != true)
-                      PopupMenuItem(
-                        value: 'block',
-                        child: Text(t('block.menu')),
+                        value: 'view_request',
+                        child: Text(t('chat.menu.view_request')),
                       ),
+                    if (conv?.otherUser?.id != null) ...[
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Text(t('report.menu')),
+                      ),
+                      if (conv?.blockedByMe == true)
+                        PopupMenuItem(
+                          value: 'unblock',
+                          child: Text(t('block.unblock_action')),
+                        )
+                      else if (conv?.isBlocked != true)
+                        PopupMenuItem(
+                          value: 'block',
+                          child: Text(t('block.menu')),
+                        ),
+                    ],
                   ],
                 ),
             ],

@@ -20,6 +20,15 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Either<Failure, int>> unreadCount() async {
+    try {
+      return Right(await _remote.unreadCount());
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
   Future<Either<Failure, ConversationModel>> get(int id) async {
     try {
       return Right(await _remote.get(id));

@@ -5,6 +5,8 @@ import 'package:home_service_app/features/chat/data/models/conversation_model.da
 abstract class ChatRepository {
   Future<Either<Failure, List<ConversationModel>>> list();
 
+  Future<Either<Failure, int>> unreadCount();
+
   Future<Either<Failure, ConversationModel>> get(int id);
 
   Future<Either<Failure, ConversationModel>> connect({

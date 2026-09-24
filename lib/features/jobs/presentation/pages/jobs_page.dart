@@ -375,8 +375,14 @@ class _JobCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: busy ? null : onReply,
-                  child: Text(busy ? t('jobs.reply_opening') : t('jobs.reply')),
+                  onPressed: (busy || !job.isLive) ? null : onReply,
+                  child: Text(
+                    busy
+                        ? t('jobs.reply_opening')
+                        : job.isLive
+                            ? t('jobs.reply')
+                            : t('jobs.reply_expired'),
+                  ),
                 ),
               ),
             ],
