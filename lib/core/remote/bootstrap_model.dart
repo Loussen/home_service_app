@@ -70,6 +70,68 @@ class StaticPageMenuItem {
       };
 }
 
+class BootstrapPlatformUpdate {
+  const BootstrapPlatformUpdate({
+    this.currentVersion = '',
+    this.softMinVersion = '',
+    this.forceMinVersion = '',
+    this.storeUrl = '',
+  });
+
+  factory BootstrapPlatformUpdate.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const BootstrapPlatformUpdate();
+    return BootstrapPlatformUpdate(
+      currentVersion: '${json['current_version'] ?? ''}'.trim(),
+      softMinVersion: '${json['soft_min_version'] ?? ''}'.trim(),
+      forceMinVersion: '${json['force_min_version'] ?? ''}'.trim(),
+      storeUrl: '${json['store_url'] ?? ''}'.trim(),
+    );
+  }
+
+  final String currentVersion;
+  final String softMinVersion;
+  final String forceMinVersion;
+  final String storeUrl;
+
+  Map<String, dynamic> toJson() => {
+        'current_version': currentVersion,
+        'soft_min_version': softMinVersion,
+        'force_min_version': forceMinVersion,
+        'store_url': storeUrl,
+      };
+}
+
+class BootstrapAppUpdate {
+  const BootstrapAppUpdate({
+    this.ios = const BootstrapPlatformUpdate(),
+    this.android = const BootstrapPlatformUpdate(),
+  });
+
+  factory BootstrapAppUpdate.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const BootstrapAppUpdate();
+    return BootstrapAppUpdate(
+      ios: BootstrapPlatformUpdate.fromJson(
+        json['ios'] is Map
+            ? Map<String, dynamic>.from(json['ios'] as Map)
+            : null,
+      ),
+      android: BootstrapPlatformUpdate.fromJson(
+        json['android'] is Map
+            ? Map<String, dynamic>.from(json['android'] as Map)
+            : null,
+      ),
+    );
+  }
+
+  final BootstrapPlatformUpdate ios;
+  final BootstrapPlatformUpdate android;
+
+  Map<String, dynamic> toJson() => {
+        'ios': ios.toJson(),
+        'android': android.toJson(),
+      };
+}
+
 class BootstrapConfig {
   const BootstrapConfig({
     this.maxCategoryTags = 3,
@@ -84,6 +146,7 @@ class BootstrapConfig {
     this.requestTtlDefaultHours = 1,
     this.requestTtlOptionsHours = const [1, 3, 6],
     this.onboardingSteps = const [],
+    this.appUpdate = const BootstrapAppUpdate(),
   });
 
   factory BootstrapConfig.fromJson(Map<String, dynamic>? json) {
@@ -115,6 +178,11 @@ class BootstrapConfig {
         const [1, 3, 6],
       ),
       onboardingSteps: steps,
+      appUpdate: BootstrapAppUpdate.fromJson(
+        json['app_update'] is Map
+            ? Map<String, dynamic>.from(json['app_update'] as Map)
+            : null,
+      ),
     );
   }
 
@@ -130,6 +198,7 @@ class BootstrapConfig {
   final int requestTtlDefaultHours;
   final List<int> requestTtlOptionsHours;
   final List<BootstrapStep> onboardingSteps;
+  final BootstrapAppUpdate appUpdate;
 
   static List<double> _numList(dynamic raw, List<double> fallback) {
     if (raw is! List) return fallback;
@@ -279,6 +348,7 @@ class BootstrapPayload {
           'onboarding_steps': config.onboardingSteps
               .map((s) => {'id': s.id, 'title': s.title})
               .toList(),
+          'app_update': config.appUpdate.toJson(),
         },
         'flags': {
           'voice_search': flags.voiceSearch,

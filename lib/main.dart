@@ -16,6 +16,7 @@ import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/remote/app_locale_notifier.dart';
 import 'package:home_service_app/core/remote/app_locale_service.dart';
 import 'package:home_service_app/core/remote/locale_rebuild.dart';
+import 'package:home_service_app/core/update/app_update_gate.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/app/observers/app_bloc_observer.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
@@ -54,6 +55,8 @@ class HomeServiceApp extends StatefulWidget {
 }
 
 class _HomeServiceAppState extends State<HomeServiceApp> {
+  bool _updateChecked = false;
+
   /// Hot reload (`r`) yalnız `FORCE_ONBOARDING=true` olanda onboarding-i açır.
   @override
   void reassemble() {
@@ -62,6 +65,14 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       appRouter.go('/onboarding');
+    });
+  }
+
+  void _scheduleUpdateCheck() {
+    if (_updateChecked) return;
+    _updateChecked = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(AppUpdateGate.maybePrompt());
     });
   }
 
@@ -88,6 +99,7 @@ class _HomeServiceAppState extends State<HomeServiceApp> {
             theme: AppTheme.light,
             routerConfig: appRouter,
             builder: (context, child) {
+              _scheduleUpdateCheck();
               return MultiBlocListener(
                 listeners: [
                   BlocListener<AuthCubit, AuthState>(
