@@ -283,6 +283,7 @@ class ConversationModel {
     this.isBlocked = false,
     this.blockedByMe = false,
     this.canMessage = true,
+    this.messagingLock,
     this.otherUser,
     this.profileTitle,
     this.lastMessage,
@@ -301,6 +302,8 @@ class ConversationModel {
   final bool isBlocked;
   final bool blockedByMe;
   final bool canMessage;
+  /// `request_cancelled` | `request_expired` | `job_completed` when closed.
+  final String? messagingLock;
   final ChatUserModel? otherUser;
   final String? profileTitle;
   final ChatMessageModel? lastMessage;
@@ -316,6 +319,7 @@ class ConversationModel {
     bool? isBlocked,
     bool? blockedByMe,
     bool? canMessage,
+    String? messagingLock,
     ConversationRequestSummary? serviceRequest,
   }) {
     return ConversationModel(
@@ -330,6 +334,7 @@ class ConversationModel {
       isBlocked: isBlocked ?? this.isBlocked,
       blockedByMe: blockedByMe ?? this.blockedByMe,
       canMessage: canMessage ?? this.canMessage,
+      messagingLock: messagingLock ?? this.messagingLock,
       otherUser: otherUser ?? this.otherUser,
       profileTitle: profileTitle,
       lastMessage: lastMessage ?? this.lastMessage,
@@ -360,6 +365,7 @@ class ConversationModel {
       isBlocked: isBlocked,
       blockedByMe: json['blocked_by_me'] == true,
       canMessage: json['can_message'] as bool? ?? !isBlocked,
+      messagingLock: json['messaging_lock'] as String?,
       otherUser: other != null ? ChatUserModel.fromJson(other) : null,
       profileTitle: profile?['title'] as String? ??
           (profile?['category'] as Map<String, dynamic>?)?['name'] as String? ??

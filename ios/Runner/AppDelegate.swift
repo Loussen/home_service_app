@@ -21,29 +21,30 @@ import UserNotifications
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  override func applicationDidBecomeActive(_ application: UIApplication) {
-    super.applicationDidBecomeActive(application)
-    Self.clearBadge(application)
-  }
-
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let messenger = engineBridge.applicationRegistrar.messenger()
     FlutterMethodChannel(name: "mysancho/badge", binaryMessenger: messenger)
       .setMethodCallHandler { call, result in
-        if call.method == "clear" {
-          Self.clearBadge(UIApplication.shared)
+        switch call.method {
+        case "clear":
+          Self.setBadge(0)
           result(nil)
-        } else {
+        case "set":
+          let count = (call.arguments as? Int) ?? 0
+          Self.setBadge(max(0, count))
+          result(nil)
+        default:
           result(FlutterMethodNotImplemented)
         }
       }
   }
 
-  private static func clearBadge(_ application: UIApplication) {
-    application.applicationIconBadgeNumber = 0
+  private static func setBadge(_ count: Int) {
+    let application = UIApplication.shared
+    application.applicationIconBadgeNumber = count
     if #available(iOS 16.0, *) {
-      UNUserNotificationCenter.current().setBadgeCount(0)
+      UNUserNotificationCenter.current().setBadgeCount(count)
     }
   }
 }

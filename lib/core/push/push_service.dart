@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:home_service_app/core/push/device_token_remote.dart';
 import 'package:home_service_app/core/push/local_push.dart';
 import 'package:home_service_app/core/push/push_router.dart';
+import 'package:home_service_app/core/remote/app_locale_notifier.dart';
 import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/jobs/jobs_inbox_signal.dart';
 
@@ -73,7 +74,11 @@ class PushService {
 
     final platform = Platform.isIOS ? 'ios' : 'android';
     try {
-      await _remote.register(token: _token!, platform: platform);
+      await _remote.register(
+        token: _token!,
+        platform: platform,
+        locale: appLocaleNotifier.value,
+      );
       debugPrint('[push] token registered');
     } catch (e) {
       debugPrint('[push] register API failed: $e');
@@ -151,7 +156,11 @@ class PushService {
       _token = token;
       final platform = Platform.isIOS ? 'ios' : 'android';
       try {
-        await _remote.register(token: token, platform: platform);
+        await _remote.register(
+          token: token,
+          platform: platform,
+          locale: appLocaleNotifier.value,
+        );
       } catch (_) {}
     });
   }

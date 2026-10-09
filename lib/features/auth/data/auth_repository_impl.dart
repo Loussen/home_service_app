@@ -90,9 +90,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserModel>> updateProfile({String? name}) async {
+  Future<Either<Failure, UserModel>> switchActiveRole(String role) async {
     try {
-      return Right(await _remote.updateProfile(name: name));
+      return Right(await _remote.switchActiveRole(role));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_message(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserModel>> updateProfile({
+    String? name,
+    bool? sharePhone,
+  }) async {
+    try {
+      return Right(await _remote.updateProfile(
+        name: name,
+        sharePhone: sharePhone,
+      ));
     } on DioException catch (e) {
       return Left(ServerFailure(_message(e)));
     }

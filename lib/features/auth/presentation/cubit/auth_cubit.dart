@@ -9,6 +9,7 @@ import 'package:home_service_app/core/push/push_service.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/features/auth/domain/auth_repository.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
+import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/chat/chat_unread_badge.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -31,6 +32,9 @@ class AuthCubit extends Cubit<AuthState> {
         prev.pendingPhone != next.pendingPhone ||
         prev.user?.id != next.user?.id ||
         prev.user?.needsRole != next.user?.needsRole ||
+        prev.user?.activeRole != next.user?.activeRole ||
+        prev.user?.hasClientRole != next.user?.hasClientRole ||
+        prev.user?.hasProviderRole != next.user?.hasProviderRole ||
         prev.user?.needsProviderOnboarding !=
             next.user?.needsProviderOnboarding ||
         prev.user?.providerApprovalStatus !=
@@ -161,8 +165,45 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  /// Switch among enabled roles, or unlock the other role via [setRole].
+  Future<bool> switchOrEnableRole(String role) async {
+    final user = state.user;
+    if (user == null) return false;
+    emit(state.copyWith(loading: true, clearMessage: true));
+    final already =
+        role == 'provider' ? user.hasProviderRole : user.hasClientRole;
+    final result = already
+        ? await _repo.switchActiveRole(role)
+        : await _repo.setRole(role);
+    return result.fold(
+      (f) {
+        emit(state.copyWith(loading: false, message: f.message));
+        return false;
+      },
+      (next) {
+        emit(state.copyWith(
+          loading: false,
+          status: AuthStatus.authenticated,
+          user: next,
+          isNewUser: false,
+        ));
+        // Refresh chat list + badge for the new active role.
+        ChatInboxSignal.ping();
+        return true;
+      },
+    );
+  }
+
   Future<void> updateName(String name) async {
     final result = await _repo.updateProfile(name: name.trim());
+    result.fold(
+      (f) => emit(state.copyWith(message: f.message)),
+      (user) => emit(state.copyWith(user: user)),
+    );
+  }
+
+  Future<void> setSharePhone(bool value) async {
+    final result = await _repo.updateProfile(sharePhone: value);
     result.fold(
       (f) => emit(state.copyWith(message: f.message)),
       (user) => emit(state.copyWith(user: user)),
@@ -216,7 +257,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> logout() async {
     await _push.unregister();
-    getIt<ChatUnreadBadge>().setCount(0);
+    getIt<ChatUnreadBadge>().clearNativeBadge();
     emit(const AuthState(status: AuthStatus.unauthenticated));
     await _repo.logout();
   }

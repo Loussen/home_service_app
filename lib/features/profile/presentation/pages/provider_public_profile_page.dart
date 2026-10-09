@@ -81,8 +81,12 @@ class _ProviderPublicProfilePageState extends State<ProviderPublicProfilePage> {
         SnackBar(content: Text(f.message)),
       ),
       (conversation) {
-        context.push('/chat/${conversation.id}');
-        context.read<AuthCubit>().bootstrap();
+        final chatId = conversation.id;
+        context.push('/chat/$chatId');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          context.read<AuthCubit>().bootstrap();
+        });
       },
     );
   }

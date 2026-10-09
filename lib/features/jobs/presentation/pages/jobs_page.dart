@@ -381,7 +381,9 @@ class _JobCard extends StatelessWidget {
                         ? t('jobs.reply_opening')
                         : job.isLive
                             ? t('jobs.reply')
-                            : t('jobs.reply_expired'),
+                            : job.requestStatus == 'cancelled'
+                                ? t('jobs.reply_stopped')
+                                : t('jobs.reply_expired'),
                   ),
                 ),
               ),

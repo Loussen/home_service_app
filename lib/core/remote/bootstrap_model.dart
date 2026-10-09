@@ -132,6 +132,55 @@ class BootstrapAppUpdate {
       };
 }
 
+class BootstrapVoicePrompts {
+  const BootstrapVoicePrompts({
+    this.greeting = const {},
+    this.accepted = const {},
+  });
+
+  factory BootstrapVoicePrompts.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const BootstrapVoicePrompts();
+    return BootstrapVoicePrompts(
+      greeting: _localeUrls(json['greeting']),
+      accepted: _localeUrls(json['accepted']),
+    );
+  }
+
+  final Map<String, String> greeting;
+  final Map<String, String> accepted;
+
+  static Map<String, String> _localeUrls(dynamic raw) {
+    final out = <String, String>{};
+    if (raw is! Map) return out;
+    for (final e in raw.entries) {
+      final value = e.value;
+      if (value == null) continue;
+      final v = '$value'.trim();
+      // Skip JSON null coerced to "null" / empty placeholders.
+      if (v.isEmpty || v == 'null' || v == 'undefined') continue;
+      out['${e.key}'] = v;
+    }
+    return out;
+  }
+
+  static String? _urlFor(Map<String, String> map, String locale) {
+    final direct = map[locale]?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final az = map['az']?.trim();
+    if (az != null && az.isNotEmpty) return az;
+    return null;
+  }
+
+  String? greetingUrlFor(String locale) => _urlFor(greeting, locale);
+
+  String? acceptedUrlFor(String locale) => _urlFor(accepted, locale);
+
+  Map<String, dynamic> toJson() => {
+        'greeting': greeting,
+        'accepted': accepted,
+      };
+}
+
 class BootstrapConfig {
   const BootstrapConfig({
     this.maxCategoryTags = 3,
@@ -147,6 +196,7 @@ class BootstrapConfig {
     this.requestTtlOptionsHours = const [1, 3, 6],
     this.onboardingSteps = const [],
     this.appUpdate = const BootstrapAppUpdate(),
+    this.voicePrompts = const BootstrapVoicePrompts(),
   });
 
   factory BootstrapConfig.fromJson(Map<String, dynamic>? json) {
@@ -183,6 +233,11 @@ class BootstrapConfig {
             ? Map<String, dynamic>.from(json['app_update'] as Map)
             : null,
       ),
+      voicePrompts: BootstrapVoicePrompts.fromJson(
+        json['voice_prompts'] is Map
+            ? Map<String, dynamic>.from(json['voice_prompts'] as Map)
+            : null,
+      ),
     );
   }
 
@@ -199,6 +254,7 @@ class BootstrapConfig {
   final List<int> requestTtlOptionsHours;
   final List<BootstrapStep> onboardingSteps;
   final BootstrapAppUpdate appUpdate;
+  final BootstrapVoicePrompts voicePrompts;
 
   static List<double> _numList(dynamic raw, List<double> fallback) {
     if (raw is! List) return fallback;
@@ -349,6 +405,7 @@ class BootstrapPayload {
               .map((s) => {'id': s.id, 'title': s.title})
               .toList(),
           'app_update': config.appUpdate.toJson(),
+          'voice_prompts': config.voicePrompts.toJson(),
         },
         'flags': {
           'voice_search': flags.voiceSearch,

@@ -4,10 +4,14 @@ Place files here after generating in ElevenLabs. **Prefer `.m4a` (AAC)** — iOS
 
 | File | When played |
 |------|-------------|
-| `voice_greeting_{az,en,ru}.m4a` | Voice tab opens |
+| `voice_greeting_{az,en,ru}.m4a` | Voice tab opens (**fallback** if admin URL empty) |
 | `voice_accepted_{az,en,ru}.m4a` | After user finishes voice recording |
 
-`.mp3` is kept as fallback.
+Both clips can be uploaded in **Admin → Ayarlar**:
+- Salamlama audiosu → `voice_prompts.greeting`
+- Qəbul audiosu → `voice_prompts.accepted`
+
+Boş = lokal asset. `.mp3` is kept as fallback.
 
 ## Scripts — greeting
 

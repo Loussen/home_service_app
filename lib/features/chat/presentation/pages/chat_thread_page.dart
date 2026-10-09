@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/review/store_review_prompt.dart';
 import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/chat/presentation/cubit/chat_thread_cubit.dart';
@@ -12,6 +13,7 @@ import 'package:home_service_app/features/chat/presentation/widgets/offer_compos
 import 'package:home_service_app/features/chat/presentation/widgets/review_composer.dart';
 import 'package:home_service_app/features/chat/presentation/widgets/report_composer.dart';
 import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatThreadPage extends StatelessWidget {
   const ChatThreadPage({super.key, required this.conversationId});
@@ -243,6 +245,21 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
               ],
             ),
             actions: [
+              if (isClient &&
+                  (phone != null && phone.isNotEmpty) &&
+                  !isBlocked)
+                IconButton(
+                  tooltip: t('chat.call'),
+                  onPressed: () async {
+                    final digits = phone.replaceAll(RegExp(r'[\s\-()]'), '');
+                    final uri = Uri.parse('tel:$digits');
+                    await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                  icon: const Icon(Icons.phone_outlined),
+                ),
               if (canSendOffer)
                 IconButton(
                   tooltip: t('offer.compose_title'),
@@ -377,8 +394,13 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                                       msg.offer!.id, 'accept'),
                                   onDecline: () => cubit.offerAction(
                                       msg.offer!.id, 'decline'),
-                                  onComplete: () => cubit.offerAction(
-                                      msg.offer!.id, 'complete'),
+                                  onComplete: () async {
+                                    await cubit.offerAction(
+                                      msg.offer!.id,
+                                      'complete',
+                                    );
+                                    await StoreReviewPrompt.maybeAsk();
+                                  },
                                   onCancel: () => cubit.offerAction(
                                       msg.offer!.id, 'cancel'),
                                   onReview: () =>
@@ -463,6 +485,20 @@ class _ChatThreadViewState extends State<_ChatThreadView> {
                             fontWeight: FontWeight.w600,
                           ),
                         )
+                      : (conv != null && !conv.canMessage)
+                          ? Text(
+                              switch (conv.messagingLock) {
+                                'job_completed' => t('chat.job_done_composer'),
+                                'request_expired' =>
+                                  t('chat.request_expired_composer'),
+                                _ => t('chat.request_stopped_composer'),
+                              },
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
                       : Row(
                           children: [
                             Expanded(

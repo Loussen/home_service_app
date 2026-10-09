@@ -7,10 +7,12 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/update/app_update_gate.dart';
+import 'package:home_service_app/core/utils/media_url.dart';
 
-/// ElevenLabs clips for voice-search UX.
+/// ElevenLabs / admin clips for voice-search UX.
 ///
-/// Prefer AAC `.m4a` on iOS (AVPlayer). Fallback `.mp3` if present.
+/// Prefer remote URL from bootstrap `config.voice_prompts.{greeting|accepted}`,
+/// then bundled AAC `.m4a` (iOS AVPlayer), then `.mp3`.
 class SearchVoicePromptPlayer {
   SearchVoicePromptPlayer();
 
@@ -28,6 +30,22 @@ class SearchVoicePromptPlayer {
       'assets/audio/voice_${kind}_$code.m4a',
       'assets/audio/voice_${kind}_$code.mp3',
     ];
+  }
+
+  /// Absolute http(s) URL from bootstrap for [kind] (`greeting` | `accepted`).
+  static String? remoteUrlFor(String kind) {
+    final prompts = AppRemoteConfig.instance.config.voicePrompts;
+    final raw = switch (kind) {
+      'greeting' => prompts.greetingUrlFor(localeCode()),
+      'accepted' => prompts.acceptedUrlFor(localeCode()),
+      _ => null,
+    };
+    final resolved = resolveMediaUrl(raw);
+    if (resolved == null) return null;
+    if (!resolved.startsWith('http://') && !resolved.startsWith('https://')) {
+      return null;
+    }
+    return resolved;
   }
 
   Future<void> playGreeting({void Function()? onStart, void Function()? onDone}) =>
@@ -97,36 +115,75 @@ class SearchVoicePromptPlayer {
     _busy = true;
     final candidates = assetCandidates(kind);
     var announced = false;
-    String? asset;
     try {
-      asset = await _firstExistingAsset(candidates);
       await _ensureSession();
-      final path = await _materialize(asset);
-      await _playFile(path, onStart: () {
-        announced = true;
-        onStart?.call();
-      });
+
+      final remote = remoteUrlFor(kind);
+      if (remote != null) {
+        try {
+          await _playUrl(remote, onStart: () {
+            announced = true;
+            onStart?.call();
+          });
+          return;
+        } catch (e, st) {
+          debugPrint('[voice_prompt] remote failed ($kind $remote): $e\n$st');
+          await _resetPlayer();
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+          await _ensureSession();
+        }
+      }
+
+      await _playAssetCandidates(
+        candidates,
+        onStart: () {
+          announced = true;
+          onStart?.call();
+        },
+      );
     } catch (e, st) {
-      debugPrint('[voice_prompt] failed (${asset ?? candidates.first}): $e\n$st');
+      debugPrint('[voice_prompt] asset failed ($kind): $e\n$st');
       try {
         await _resetPlayer();
         await Future<void>.delayed(const Duration(milliseconds: 250));
         await _ensureSession();
-        asset ??= await _firstExistingAsset(candidates);
-        final path = await _materialize(asset);
-        await _playFile(path, onStart: () {
-          if (!announced) {
-            announced = true;
-            onStart?.call();
-          }
-        });
+        await _playAssetCandidates(
+          candidates,
+          onStart: () {
+            if (!announced) {
+              announced = true;
+              onStart?.call();
+            }
+          },
+        );
       } catch (e2, st2) {
-        debugPrint('[voice_prompt] retry failed: $e2\n$st2');
+        debugPrint('[voice_prompt] retry failed ($kind): $e2\n$st2');
       }
     } finally {
       _busy = false;
       onDone?.call();
     }
+  }
+
+  Future<void> _playAssetCandidates(
+    List<String> candidates, {
+    required void Function() onStart,
+  }) async {
+    final asset = await _firstExistingAsset(candidates);
+    final path = await _materialize(asset);
+    await _playFile(path, onStart: onStart);
+  }
+
+  Future<void> _playUrl(String url, {required void Function() onStart}) async {
+    final player = await _obtainPlayer();
+    await player.setVolume(1);
+    await player.setUrl(url);
+    onStart();
+    final done = player.processingStateStream.firstWhere(
+      (s) => s == ProcessingState.completed,
+    );
+    await player.play();
+    await done.timeout(const Duration(seconds: 45));
   }
 
   Future<void> _playFile(String path, {required void Function() onStart}) async {

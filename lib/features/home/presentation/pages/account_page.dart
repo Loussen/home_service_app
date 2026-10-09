@@ -13,6 +13,7 @@ import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dar
 import 'package:home_service_app/features/home/presentation/widgets/profile_completeness_banner.dart';
 import 'package:home_service_app/features/auth/presentation/cubit/auth_state.dart';
 import 'package:home_service_app/features/auth/presentation/widgets/logout_confirm.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -192,6 +193,55 @@ class AccountPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _switchRole(BuildContext context, UserModel user) async {
+    final target = user.alternateRole;
+    final enabling = !user.alternateRoleEnabled;
+    final targetLabel = target == 'provider'
+        ? t('account.role.provider')
+        : t('account.role.client');
+
+    final confirmed = await showAppConfirm(
+      context,
+      title: enabling
+          ? t('account.switch.enable_title', params: {'role': targetLabel})
+          : t('account.switch.title', params: {'role': targetLabel}),
+      message: enabling
+          ? (target == 'provider'
+              ? t('account.switch.enable_provider_body')
+              : t('account.switch.enable_client_body'))
+          : t('account.switch.body', params: {'role': targetLabel}),
+      confirmLabel: enabling
+          ? t('account.switch.enable_action')
+          : t('account.switch.action'),
+      cancelLabel: t('common.cancel'),
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final ok =
+        await context.read<AuthCubit>().switchOrEnableRole(target);
+    if (!context.mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.read<AuthCubit>().state.message ?? t('error.generic'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          t('account.switch.done', params: {'role': targetLabel}),
+        ),
+      ),
+    );
+    // Router redirect handles onboarding / pending / tabs for new active role.
+    context.go('/search');
   }
 
   @override
@@ -393,6 +443,25 @@ class AccountPage extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children: [
+                        if (user != null)
+                          _MenuTile(
+                            icon: Icons.swap_horiz_rounded,
+                            label: user.alternateRoleEnabled
+                                ? t('account.menu.switch_role')
+                                : (user.isProvider
+                                    ? t('account.menu.enable_client')
+                                    : t('account.menu.enable_provider')),
+                            trailing: Text(
+                              user.isProvider
+                                  ? t('account.role.client')
+                                  : t('account.role.provider'),
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () => _switchRole(context, user),
+                          ),
                         if (user?.isProvider == true)
                           _MenuTile(
                             icon: Icons.shield_outlined,

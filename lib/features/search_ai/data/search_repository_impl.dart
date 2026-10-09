@@ -123,6 +123,27 @@ class SearchRepositoryImpl implements SearchRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, ServiceRequestModel>> cancelRequest(int id) async {
+    try {
+      return Right(await _remote.cancelRequest(id));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ServiceRequestModel>> setCategory({
+    required int id,
+    required int categoryId,
+  }) async {
+    try {
+      return Right(await _remote.setCategory(id: id, categoryId: categoryId));
+    } on DioException catch (e) {
+      return Left(ServerFailure(_msg(e)));
+    }
+  }
+
   String _msg(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['message'] is String) {

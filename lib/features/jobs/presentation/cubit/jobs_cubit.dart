@@ -18,8 +18,10 @@ class JobsCubit extends Cubit<JobsState> {
   static const _pollInterval = Duration(seconds: 8);
 
   Future<void> load() async {
+    if (isClosed) return;
     emit(state.copyWith(loading: true, clearMessage: true));
     final result = await _jobs.list();
+    if (isClosed) return;
     result.fold(
       (f) => emit(state.copyWith(loading: false, message: f.message)),
       (items) => emit(state.copyWith(loading: false, items: items)),

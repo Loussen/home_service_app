@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
+import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_cubit.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_state.dart';
 import 'package:home_service_app/features/search_ai/presentation/pages/search_ai_page.dart';
@@ -60,6 +62,31 @@ class _RequestDetailView extends StatelessWidget {
               },
             ),
             actions: [
+              if (state.request != null &&
+                  isRequestLive(
+                    state.request!.status,
+                    state.request!.expiresAt,
+                  ))
+                IconButton(
+                  tooltip: t('request.cancel_action'),
+                  onPressed: () async {
+                    final ok = await showAppConfirm(
+                      context,
+                      title: t('request.cancel_title'),
+                      message: t('request.cancel_confirm'),
+                      confirmLabel: t('request.cancel_action'),
+                      cancelLabel: t('common.cancel'),
+                      destructive: true,
+                    );
+                    if (ok == true && context.mounted) {
+                      await cubit.cancelRequest();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.stop_circle_outlined,
+                    color: Color(0xFFC44536),
+                  ),
+                ),
               IconButton(
                 tooltip: t('common.retry'),
                 onPressed: () => cubit.openRequest(requestId),
@@ -109,6 +136,7 @@ class _RequestDetailView extends StatelessWidget {
       return RequestResultsBody(
         state: state,
         onUrgent: cubit.markUrgent,
+        onCancel: cubit.cancelRequest,
         onRefresh: () => cubit.refreshRequest(state.request!.id),
       );
     }

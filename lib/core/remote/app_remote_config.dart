@@ -87,6 +87,7 @@ class AppRemoteConfig {
         requestTtlOptionsHours: remote.config.requestTtlOptionsHours,
         onboardingSteps: steps,
         appUpdate: remote.config.appUpdate,
+        voicePrompts: remote.config.voicePrompts,
       ),
       flags: remote.flags,
       staticPages: remote.staticPages,
@@ -179,6 +180,11 @@ class AppRemoteConfig {
         'Səs oxunmadı. Eyni mətni yazıb yenidən göndərin.',
     'search.missing_category':
         'Kateqoriya başa düşülmədi. Mətni düzəldib yenidən göndərin və ya əl ilə kateqoriya seçin.',
+    'search.pick_category_title': 'Kateqoriya seçin',
+    'search.pick_category_hint':
+        'Hansı xidmət lazımdır? Seçəndən sonra uyğun icraçılar axtarılacaq.',
+    'search.pick_category_action': 'Kateqoriya seç',
+    'search.category_set_done': 'Kateqoriya təyin olundu',
     'search.meta.expanded': 'Radius {from} km-dən {to} km-ə genişləndi.',
     'search.meta.dropped_category':
         'Bu kateqoriyada tapılmadı — yaxın digər icraçılar göstərilir.',
@@ -217,7 +223,7 @@ class AppRemoteConfig {
     'request.status.active': 'Aktiv',
     'request.status.matched': 'Uyğunlaşıb',
     'request.status.completed': 'Tamamlanıb',
-    'request.status.cancelled': 'Ləğv edilib',
+    'request.status.cancelled': 'Dayandırılıb',
     'request.status.expired': 'Müddəti bitib',
     'category.label': 'Kateqoriyalar',
     'category.max_reached': 'Maksimum {max} kateqoriya',
@@ -311,6 +317,20 @@ class AppRemoteConfig {
     'notifications.status.read': 'Oxunub',
     'notifications.fallback_title': 'Bildiriş',
     'account.menu.switch_role': 'Rol dəyiş',
+    'account.menu.enable_provider': 'Xidmətçi ol',
+    'account.menu.enable_client': 'Ailə kimi də istifadə et',
+    'account.switch.title': '{role} rejiminə keç',
+    'account.switch.body':
+        'Aktiv rol {role} olacaq. Eyni nömrə və balans qalır.',
+    'account.switch.action': 'Keç',
+    'account.switch.enable_title': '{role} rolunu aç',
+    'account.switch.enable_provider_body':
+        'Xidmətçi rolunu açandan sonra profil doldurub təsdiq gözləyəcəksiniz. Ailə rejimində də qala bilərsiniz.',
+    'account.switch.enable_client_body':
+        'Ailə rolunu açandan sonra eyni nömrə ilə axtarış və CONNECT edə bilərsiniz.',
+    'account.switch.enable_action': 'Aç',
+    'account.switch.done': 'İndi: {role}',
+    'web.auth.role_locked': 'Rol artıq seçilib və dəyişdirilə bilməz',
     'account.menu.settings': 'Parametrlər',
     'account.menu.info': 'Məlumat',
     'account.menu.language': 'Dil',
@@ -447,6 +467,7 @@ class AppRemoteConfig {
     'jobs.badge.active': 'Aktiv',
     'jobs.badge.inactive': 'Deaktiv',
     'jobs.reply_expired': 'MÜDDƏTİ BITIB',
+    'jobs.reply_stopped': 'SORĞU DAYANDIRILIB',
     'requests.empty':
         'Hələ sorğu yoxdur.\nAxtar tabında səs və ya mətn göndərin.',
     'requests.item_fallback': 'Sorğu #{id}',
@@ -483,9 +504,27 @@ class AppRemoteConfig {
     'chat.blocked_by_me_hint':
         'Bu istifadəçini bloklamısınız. Tarixçə açıqdır; mesaj üçün bloku götürün.',
     'chat.blocked_composer': 'Bloklanmış söhbətdə mesaj göndərmək olmur',
+    'chat.request_stopped_composer':
+        'Ailə axtarışı dayandırıb — bu söhbətdə yeni mesaj göndərmək olmur',
+    'chat.request_expired_composer':
+        'Sorğunun müddəti bitib — bu söhbətdə yeni mesaj göndərmək olmur',
+    'chat.job_done_composer':
+        'İş tamamlanıb — bu söhbətdə yeni mesaj göndərmək olmur',
+    'push.missed_opportunity.title': 'Fürsəti qaçırdınız',
+    'push.missed_opportunity.body':
+        'Uyğun sorğu müddəti bitdi. Bundan sonra aktiv olun — daha çox sorğu qəbul edin.',
+    'chat.call': 'Zəng et',
     'chat.menu.view_request': 'Sorğuya bax',
     'chat.request_sheet_title': 'Bu söhbətin sorğusu',
     'chat.request_open_full': 'Tam sorğunu aç',
+    'account.share_phone': 'Nömrəmi chatda göstər',
+    'account.share_phone_hint':
+        'Ailə söhbətdə telefon ikonunu görüb zəng edə bilər',
+    'request.cancel_title': 'Xidmətçi tapdınız?',
+    'request.cancel_confirm':
+        'Xidmətçi tapıbsınızsa axtarışı dayandırın. Digər xidmətçilər bu sorğuya müraciət edə bilməz; mövcud söhbətlərdə yeni mesaj da bağlanır.',
+    'request.cancel_action': 'Dayandır',
+    'request.cancel_done': 'Axtarış dayandırıldı',
     'offer.title': 'Təklif',
     'offer.compose_title': 'Təklif göndər',
     'offer.pick_time': 'Tarix və saat seçin',
@@ -573,6 +612,7 @@ class AppRemoteConfig {
     'match.score': '{score}% uyğunluq',
     'match.connecting': 'QOŞULUR…',
     'match.connect': 'CONNECT',
+    'match.connect_closed': 'Bu sorğu artıq açıq deyil — CONNECT olmur',
     'match.connect_remaining': 'Bu gün {count} CONNECT qalıb',
     'match.connect_free': 'Pulsuz CONNECT: {left}/{quota} qalıb · bu gün {count}',
     'match.connect_free_open': 'CONNECT pulsuzdur · bu gün {count} qalıb',

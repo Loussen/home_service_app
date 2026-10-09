@@ -34,14 +34,23 @@ class AuthRemoteDataSource {
 
   Future<UserModel> setRole(String role) async {
     final res = await _client.dio.post('/auth/role', data: {'role': role});
+    return UserModel.fromJson(
+      Map<String, dynamic>.from(res.data['data'] as Map),
+    );
+  }
+
+  Future<UserModel> switchActiveRole(String role) async {
+    final res =
+        await _client.dio.post('/auth/active-role', data: {'role': role});
     return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);
   }
 
-  Future<UserModel> updateProfile({String? name}) async {
+  Future<UserModel> updateProfile({String? name, bool? sharePhone}) async {
     final res = await _client.dio.patch(
       '/auth/profile',
       data: {
         if (name != null) 'name': name,
+        if (sharePhone != null) 'share_phone': sharePhone,
       },
     );
     return UserModel.fromJson(res.data['data'] as Map<String, dynamic>);

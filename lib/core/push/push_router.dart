@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:home_service_app/app/config/router.dart';
+import 'package:home_service_app/app/di/injection.dart';
 import 'package:home_service_app/core/push/local_push.dart';
+import 'package:home_service_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/jobs/jobs_inbox_signal.dart';
 
@@ -17,13 +19,25 @@ class PushRouter {
   static const _channel = MethodChannel('mysancho/badge');
 
   static Future<void> clearBadge() async {
+    await setBadge(0);
+  }
+
+  /// Sync iOS launcher badge to [count] (usually chat unread).
+  static Future<void> setBadge(int count) async {
     if (kIsWeb) return;
-    try {
-      await LocalPush.cancelAll();
-    } catch (_) {}
+    final n = count < 0 ? 0 : count;
+    if (n == 0) {
+      try {
+        await LocalPush.cancelAll();
+      } catch (_) {}
+    }
     if (Platform.isIOS) {
       try {
-        await _channel.invokeMethod<void>('clear');
+        if (n == 0) {
+          await _channel.invokeMethod<void>('clear');
+        } else {
+          await _channel.invokeMethod<void>('set', n);
+        }
       } catch (_) {}
     }
   }
@@ -39,8 +53,6 @@ class PushRouter {
     }
     _lastOpenAt = now;
 
-    unawaited(clearBadge());
-
     final type = (data['type'] ?? '').trim();
     final conversationId = (data['conversation_id'] ?? '').trim();
 
@@ -53,7 +65,12 @@ class PushRouter {
       final matchId = int.tryParse((data['match_id'] ?? '').trim());
       final requestId = int.tryParse((data['request_id'] ?? '').trim());
       JobsInboxSignal.ping(matchId: matchId, requestId: requestId);
-      appRouter.go('/search');
+      unawaited(_openAsProvider('/search'));
+      return;
+    }
+    // Expired job — CTA is "stay active", not reopen the dead request.
+    if (type == 'missed_opportunity') {
+      unawaited(_openAsProvider('/profiles'));
       return;
     }
     if (type == 'admin') {
@@ -69,6 +86,20 @@ class PushRouter {
     open({
       for (final e in raw.entries) e.key.toString(): e.value.toString(),
     });
+  }
+
+  /// Provider pushes land on Jobs/Profiles — switch active role if needed.
+  static Future<void> _openAsProvider(String path) async {
+    try {
+      final auth = getIt<AuthCubit>();
+      final user = auth.state.user;
+      if (user != null &&
+          user.hasProviderRole &&
+          user.activeRole != 'provider') {
+        await auth.switchOrEnableRole('provider');
+      }
+    } catch (_) {}
+    appRouter.go(path);
   }
 
   static void _openChat(String conversationId) {

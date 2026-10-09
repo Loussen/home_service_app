@@ -111,6 +111,12 @@ class ServiceRequestModel {
 
   bool get isProcessing => status == 'processing';
   bool get isReady => status == 'active' || status == 'matched';
+  /// Finished lifecycle — do not poll / wait for AI.
+  bool get isTerminal =>
+      status == 'expired' ||
+      status == 'cancelled' ||
+      status == 'completed';
+  bool get isSettled => !isProcessing;
   bool get transcriptionFailed => parsedCriteria?['transcription_failed'] == true;
   bool get missingCategory => parsedCriteria?['missing_category'] == true;
   bool get hasAudio => audioUrl != null && audioUrl!.trim().isNotEmpty;

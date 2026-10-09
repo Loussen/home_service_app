@@ -145,4 +145,24 @@ class SearchRemoteDataSource {
       balance: parseDouble(data['balance']),
     );
   }
+
+  Future<ServiceRequestModel> cancelRequest(int id) async {
+    final res = await _client.dio.post('/service-requests/$id/cancel');
+    return ServiceRequestModel.fromJson(
+      res.data['data'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<ServiceRequestModel> setCategory({
+    required int id,
+    required int categoryId,
+  }) async {
+    final res = await _client.dio.post(
+      '/service-requests/$id/category',
+      data: {'category_id': categoryId},
+    );
+    return ServiceRequestModel.fromJson(
+      res.data['data'] as Map<String, dynamic>,
+    );
+  }
 }

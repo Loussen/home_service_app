@@ -302,7 +302,9 @@ class SearchAiCubit extends Cubit<SearchAiState> {
         }
       },
       (request) {
-        if (request.isReady || request.matches.isNotEmpty) {
+        // Only `processing` waits for AI. expired/cancelled/completed/active/matched
+        // must open immediately (no multi-second poll spinner).
+        if (request.isSettled) {
           _pollTimer?.cancel();
           emit(state.copyWith(
             phase: SearchPhase.results,
@@ -321,7 +323,7 @@ class SearchAiCubit extends Cubit<SearchAiState> {
   Future<void> openRequest(int id) async {
     emit(state.copyWith(phase: SearchPhase.processing, clearMessage: true));
     await refreshRequest(id);
-    if (state.phase == SearchPhase.processing && state.request != null) {
+    if (state.request?.isProcessing == true) {
       _startPolling(id);
     }
   }
@@ -337,6 +339,43 @@ class SearchAiCubit extends Cubit<SearchAiState> {
         message: t('search.urgent_sent',
             params: {'balance': '${data.balance}'}),
       )),
+    );
+  }
+
+  Future<void> cancelRequest() async {
+    final id = state.request?.id;
+    if (id == null) return;
+    final result = await _repo.cancelRequest(id);
+    result.fold(
+      (f) => emit(state.copyWith(message: f.message)),
+      (request) => emit(state.copyWith(
+        request: request,
+        message: t('request.cancel_done'),
+      )),
+    );
+  }
+
+  Future<bool> assignRequestCategory(int categoryId) async {
+    final id = state.request?.id;
+    if (id == null) return false;
+    emit(state.copyWith(phase: SearchPhase.processing, clearMessage: true));
+    final result = await _repo.setCategory(id: id, categoryId: categoryId);
+    return result.fold(
+      (f) {
+        emit(state.copyWith(
+          phase: SearchPhase.results,
+          message: f.message,
+        ));
+        return false;
+      },
+      (request) {
+        emit(state.copyWith(
+          phase: SearchPhase.results,
+          request: request,
+          message: t('search.category_set_done'),
+        ));
+        return true;
+      },
     );
   }
 

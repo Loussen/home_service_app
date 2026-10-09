@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:home_service_app/app/di/injection.dart';
+import 'package:home_service_app/core/push/push_service.dart';
 import 'package:home_service_app/core/remote/app_locale_notifier.dart';
 import 'package:home_service_app/core/remote/app_locale_service.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
@@ -14,4 +17,6 @@ Future<void> changeAppLocale(String locale) async {
     defaultLocale: AppRemoteConfig.instance.payload.defaultLocale,
   );
   appLocaleNotifier.value = locale;
+  // Keep FCM device locale in sync for localized marketing pushes.
+  unawaited(getIt<PushService>().register());
 }

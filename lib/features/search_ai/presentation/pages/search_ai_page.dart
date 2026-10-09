@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:home_service_app/app/widgets/app_confirm_dialog.dart';
 import 'package:home_service_app/core/remote/app_remote_config.dart';
 import 'package:home_service_app/core/utils/request_status.dart';
 import 'package:home_service_app/app/config/app_colors.dart';
@@ -20,6 +21,7 @@ import 'package:home_service_app/features/search_ai/presentation/widgets/search_
 import 'package:home_service_app/features/search_ai/presentation/widgets/search_voice_prompt_player.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/request_ttl_confirm.dart';
 import 'package:home_service_app/features/search_ai/presentation/widgets/request_audio_player.dart';
+import 'package:home_service_app/features/profile/presentation/widgets/searchable_category_picker.dart';
 import 'package:home_service_app/core/update/app_update_gate.dart';
 
 class SearchAiPage extends StatelessWidget {
@@ -233,6 +235,32 @@ class _SearchAiViewState extends State<_SearchAiView>
           appBar: AppBar(
             title: Text(AppConfig.appName),
             actions: [
+              if (state.phase == SearchPhase.results &&
+                  state.request != null &&
+                  isRequestLive(
+                    state.request!.status,
+                    state.request!.expiresAt,
+                  ))
+                IconButton(
+                  onPressed: () async {
+                    final ok = await showAppConfirm(
+                      context,
+                      title: t('request.cancel_title'),
+                      message: t('request.cancel_confirm'),
+                      confirmLabel: t('request.cancel_action'),
+                      cancelLabel: t('common.cancel'),
+                      destructive: true,
+                    );
+                    if (ok == true && context.mounted) {
+                      await cubit.cancelRequest();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.stop_circle_outlined,
+                    color: Color(0xFFC44536),
+                  ),
+                  tooltip: t('request.cancel_action'),
+                ),
               if (state.phase == SearchPhase.results)
                 IconButton(
                   onPressed: cubit.reset,
@@ -245,6 +273,7 @@ class _SearchAiViewState extends State<_SearchAiView>
               ? RequestResultsBody(
                   state: state,
                   onUrgent: cubit.markUrgent,
+                  onCancel: cubit.cancelRequest,
                   onRefresh: () => cubit.refreshRequest(state.request!.id),
                 )
               : Column(
@@ -792,11 +821,13 @@ class RequestResultsBody extends StatefulWidget {
     required this.state,
     required this.onUrgent,
     required this.onRefresh,
+    this.onCancel,
   });
 
   final SearchAiState state;
   final VoidCallback onUrgent;
   final VoidCallback onRefresh;
+  final VoidCallback? onCancel;
 
   @override
   State<RequestResultsBody> createState() => _RequestResultsBodyState();
@@ -879,23 +910,39 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
 
   Future<void> _connect(MatchModel match) async {
     final profileId = match.provider?.id;
-    if (profileId == null) return;
+    final request = widget.state.request;
+    if (profileId == null || request == null) return;
+    if (!isRequestLive(request.status, request.expiresAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('match.connect_closed'))),
+      );
+      return;
+    }
     setState(() => _connectingId = profileId);
     final result = await getIt<ChatRepository>().connect(
       providerProfileId: profileId,
-      serviceRequestId: widget.state.request?.id,
+      serviceRequestId: request.id,
     );
     if (!mounted) return;
     setState(() => _connectingId = null);
     result.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(f.message)),
-      ),
+      (f) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(f.message)),
+          );
+        });
+      },
       (conversation) {
-        // Navigate first — bootstrap rebuild must not race the shell push
-        // (duplicate pageKey / HeroControllerScope crash).
-        context.push('/chat/${conversation.id}');
-        context.read<AuthCubit>().bootstrap();
+        // Navigate first; refresh wallet/quota after the route settles
+        // (bootstrap during push races shell GlobalKeys).
+        final chatId = conversation.id;
+        context.push('/chat/$chatId');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          context.read<AuthCubit>().bootstrap();
+        });
       },
     );
   }
@@ -908,13 +955,109 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
     context.push('/providers/$profileId$q');
   }
 
+  Future<void> _pickMissingCategory() async {
+    final cubit = context.read<SearchAiCubit>();
+    if (cubit.state.categories.isEmpty) {
+      await cubit.reloadCategories();
+    }
+    if (!mounted) return;
+    final cats = cubit.state.categories;
+    if (cats.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('search.filters_loading'))),
+      );
+      return;
+    }
+    var selected = <int>[];
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 12,
+                  bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t('search.pick_category_title'),
+                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      t('search.pick_category_hint'),
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: MediaQuery.sizeOf(ctx).height * 0.45,
+                      child: SearchableCategoryPicker(
+                        categories: cats,
+                        selectedIds: selected,
+                        max: 1,
+                        embedded: true,
+                        onChanged: (ids) {
+                          selected = ids;
+                          setModal(() {});
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: selected.isEmpty
+                          ? null
+                          : () => Navigator.pop(ctx, selected.first),
+                      child: Text(t('search.pick_category_action')),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (picked == null || !mounted) return;
+    await cubit.assignRequestCategory(picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final request = widget.state.request!;
     final matches = request.matches;
     final onUrgent = widget.onUrgent;
     final onRefresh = widget.onRefresh;
+    final onCancel = widget.onCancel;
+    final canContact = isRequestLive(request.status, request.expiresAt);
+    final canCancel = onCancel != null && canContact;
     final selected = _matchFor(_selectedProviderId);
+
+    Future<void> confirmCancel() async {
+      final ok = await showAppConfirm(
+        context,
+        title: t('request.cancel_title'),
+        message: t('request.cancel_confirm'),
+        confirmLabel: t('request.cancel_action'),
+        cancelLabel: t('common.cancel'),
+        destructive: true,
+      );
+      if (ok == true) onCancel!();
+    }
 
     if (_mapView) {
       return Column(
@@ -926,7 +1069,8 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
               matchCount: matches.length,
               mapView: _mapView,
               onToggleView: () => setState(() => _mapView = false),
-              onUrgent: onUrgent,
+              onUrgent: canContact ? onUrgent : null,
+              onCancel: canCancel ? confirmCancel : null,
             ),
           ),
           Expanded(
@@ -953,7 +1097,7 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                   onOpenProfile: selected.provider == null
                       ? null
                       : () => _openProfile(selected),
-                  onConnect: selected.provider == null
+                  onConnect: selected.provider == null || !canContact
                       ? null
                       : () => _connect(selected),
                 ),
@@ -1031,7 +1175,8 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                       _mapView = true;
                       _selectProvider(matches.first.provider?.id);
                     }),
-            onUrgent: onUrgent,
+            onUrgent: canContact ? onUrgent : null,
+            onCancel: canCancel ? confirmCancel : null,
           ),
           const SizedBox(height: 8),
           MatchesMap(
@@ -1046,13 +1191,28 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
               child: Center(
-                child: Text(
-                  request.transcriptionFailed
-                      ? t('search.transcript_failed')
-                      : request.missingCategory
-                          ? t('search.missing_category')
-                          : t('search.no_matches'),
-                  textAlign: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      request.transcriptionFailed
+                          ? t('search.transcript_failed')
+                          : request.missingCategory
+                              ? t('search.missing_category')
+                              : t('search.no_matches'),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (request.missingCategory &&
+                        !request.transcriptionFailed &&
+                        canContact) ...[
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _pickMissingCategory,
+                        icon: const Icon(Icons.category_outlined),
+                        label: Text(t('search.pick_category_action')),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             )
@@ -1071,7 +1231,9 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                       m.provider == null ? null : () => _toggleFavorite(m),
                   onOpenProfile:
                       m.provider == null ? null : () => _openProfile(m),
-                  onConnect: m.provider == null ? null : () => _connect(m),
+                  onConnect: m.provider == null || !canContact
+                      ? null
+                      : () => _connect(m),
                 ),
               );
             }),
@@ -1086,40 +1248,68 @@ class _ResultsHeader extends StatelessWidget {
     required this.request,
     required this.matchCount,
     required this.mapView,
-    required this.onUrgent,
+    this.onUrgent,
     this.onToggleView,
+    this.onCancel,
   });
 
   final ServiceRequestModel request;
   final int matchCount;
   final bool mapView;
-  final VoidCallback onUrgent;
+  final VoidCallback? onUrgent;
   final VoidCallback? onToggleView;
+  final Future<void> Function()? onCancel;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Text(
-            t('search.matches_count', params: {'count': '$matchCount'}),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                t('search.matches_count', params: {'count': '$matchCount'}),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            if (onToggleView != null)
+              TextButton.icon(
+                onPressed: onToggleView,
+                icon: Icon(
+                  mapView ? Icons.view_list : Icons.map_outlined,
+                  size: 18,
+                ),
+                label: Text(
+                  mapView ? t('search.view_list') : t('search.view_map'),
+                ),
+              ),
+            if (!request.isUrgent && onUrgent != null)
+              TextButton.icon(
+                onPressed:
+                    (context.watch<AuthCubit>().state.user?.canUrgent ?? true)
+                        ? onUrgent
+                        : null,
+                icon: const Icon(Icons.campaign_outlined, size: 18),
+                label: Text(t('search.urgent_title')),
+              ),
+          ],
         ),
-        if (onToggleView != null)
-          TextButton.icon(
-            onPressed: onToggleView,
-            icon: Icon(mapView ? Icons.view_list : Icons.map_outlined, size: 18),
-            label: Text(mapView ? t('search.view_list') : t('search.view_map')),
+        if (onCancel != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => onCancel!(),
+            icon: const Icon(Icons.stop_circle_outlined, size: 18),
+            label: Text(t('request.cancel_action')),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFC44536),
+              side: const BorderSide(color: Color(0xFFC44536)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
           ),
-        if (!request.isUrgent)
-          TextButton.icon(
-            onPressed: (context.watch<AuthCubit>().state.user?.canUrgent ?? true)
-                ? onUrgent
-                : null,
-            icon: const Icon(Icons.campaign_outlined, size: 18),
-            label: Text(t('search.urgent_title')),
-          ),
+        ],
       ],
     );
   }

@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:home_service_app/core/push/push_router.dart';
 import 'package:home_service_app/features/chat/chat_inbox_signal.dart';
 import 'package:home_service_app/features/chat/domain/chat_repository.dart';
 
-/// Total unread chat messages for bottom-nav badge.
+/// Total unread chat messages for bottom-nav badge + iOS app icon.
 class ChatUnreadBadge extends ChangeNotifier {
   ChatUnreadBadge(this._repo) {
     _sub = ChatInboxSignal.stream.listen((_) {
@@ -25,6 +26,14 @@ class ChatUnreadBadge extends ChangeNotifier {
     if (next == _count) return;
     _count = next;
     notifyListeners();
+    unawaited(PushRouter.setBadge(next));
+  }
+
+  /// Force native badge clear (logout), even if count already 0.
+  void clearNativeBadge() {
+    _count = 0;
+    notifyListeners();
+    unawaited(PushRouter.setBadge(0));
   }
 
   Future<void> refresh() async {

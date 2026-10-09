@@ -6,10 +6,18 @@ class DeviceTokenRemote {
 
   final ApiClient _client;
 
-  Future<void> register({required String token, required String platform}) async {
+  Future<void> register({
+    required String token,
+    required String platform,
+    String? locale,
+  }) async {
     await _client.dio.post(
       '/device-tokens',
-      data: {'token': token, 'platform': platform},
+      data: {
+        'token': token,
+        'platform': platform,
+        if (locale != null && locale.isNotEmpty) 'locale': locale,
+      },
     );
   }
 

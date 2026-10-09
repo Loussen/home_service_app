@@ -52,6 +52,7 @@ class UserModel {
     this.avatarUrl,
     this.status = 'active',
     this.isBlocked = false,
+    this.sharePhone = false,
     this.profileStatus,
     this.profileStatusLabel,
     this.providerProfilesCount = 0,
@@ -60,6 +61,10 @@ class UserModel {
     this.urgentQuota,
     this.bumpQuota,
     this.needsRole = false,
+    this.hasClientRole = false,
+    this.hasProviderRole = false,
+    this.canSwitchRole = false,
+    this.roles = const [],
     this.providerApprovalStatus,
     this.needsProviderApproval = false,
     this.providerApprovalMessage,
@@ -69,6 +74,7 @@ class UserModel {
 
   final int id;
   final String phone;
+  final bool sharePhone;
   final String? name;
   final String? avatarUrl;
   final String activeRole;
@@ -83,6 +89,10 @@ class UserModel {
   final UrgentQuota? urgentQuota;
   final BumpQuota? bumpQuota;
   final bool needsRole;
+  final bool hasClientRole;
+  final bool hasProviderRole;
+  final bool canSwitchRole;
+  final List<String> roles;
   final String? providerApprovalStatus;
   final bool needsProviderApproval;
   final String? providerApprovalMessage;
@@ -96,6 +106,10 @@ class UserModel {
       isProvider && (needsProviderApproval || providerApprovalStatus == 'pending');
   bool get isProviderRejected =>
       isProvider && providerApprovalStatus == 'rejected';
+  /// Other role to enable or switch into from Account.
+  String get alternateRole => isProvider ? 'client' : 'provider';
+  bool get alternateRoleEnabled =>
+      isProvider ? hasClientRole : hasProviderRole;
   bool get canConnect => connectQuota?.canConnect ?? true;
   bool get canUrgent => urgentQuota?.canUrgent ?? true;
   bool get canBump => bumpQuota?.canBump ?? true;
@@ -133,6 +147,7 @@ class UserModel {
     return UserModel(
       id: json['id'] as int,
       phone: json['phone'] as String,
+      sharePhone: json['share_phone'] == true,
       name: json['name'] as String?,
       avatarUrl: resolveMediaUrl(json['avatar_url'] as String?),
       activeRole: json['active_role'] as String? ?? 'client',
@@ -158,6 +173,12 @@ class UserModel {
           ? BumpQuota.fromJson(Map<String, dynamic>.from(bumpJson))
           : null,
       needsRole: json['needs_role'] == true,
+      hasClientRole: json['has_client_role'] == true,
+      hasProviderRole: json['has_provider_role'] == true,
+      canSwitchRole: json['can_switch_role'] == true,
+      roles: json['roles'] is List
+          ? (json['roles'] as List).map((e) => '$e').toList()
+          : const [],
       providerApprovalStatus: json['provider_approval_status'] as String?,
       needsProviderApproval: json['needs_provider_approval'] == true,
       providerApprovalMessage: json['provider_approval_message'] as String?,

@@ -49,4 +49,11 @@ abstract class SearchRepository {
 
   Future<Either<Failure, ({ServiceRequestModel request, double balance})>>
       markUrgent(int id);
+
+  Future<Either<Failure, ServiceRequestModel>> cancelRequest(int id);
+
+  Future<Either<Failure, ServiceRequestModel>> setCategory({
+    required int id,
+    required int categoryId,
+  });
 }
