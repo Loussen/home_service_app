@@ -58,19 +58,18 @@ class PushRouter {
 
     if (type == 'chat_message' || type == 'chat_connect') {
       ChatInboxSignal.ping();
-      _openChat(conversationId);
+      final audience = (data['audience_role'] ?? '').trim();
+      unawaited(_openChatForAudience(conversationId, audience));
       return;
     }
-    if (type == 'new_job' || type == 'urgent_job') {
+    if (type == 'new_job' ||
+        type == 'urgent_job' ||
+        type == 'missed_opportunity') {
       final matchId = int.tryParse((data['match_id'] ?? '').trim());
       final requestId = int.tryParse((data['request_id'] ?? '').trim());
       JobsInboxSignal.ping(matchId: matchId, requestId: requestId);
-      unawaited(_openAsProvider('/search'));
-      return;
-    }
-    // Expired job — CTA is "stay active", not reopen the dead request.
-    if (type == 'missed_opportunity') {
-      unawaited(_openAsProvider('/profiles'));
+      // Jobs tab (provider) — expired/missed jobs still open for history.
+      unawaited(_openAsRole('provider', '/search'));
       return;
     }
     if (type == 'admin') {
@@ -88,22 +87,33 @@ class PushRouter {
     });
   }
 
-  /// Provider pushes land on Jobs/Profiles — switch active role if needed.
-  static Future<void> _openAsProvider(String path) async {
+  /// Switch to [role] when the user has it enabled, then go [path].
+  static Future<void> _openAsRole(String role, String path) async {
     try {
       final auth = getIt<AuthCubit>();
       final user = auth.state.user;
-      if (user != null &&
-          user.hasProviderRole &&
-          user.activeRole != 'provider') {
-        await auth.switchOrEnableRole('provider');
+      final hasRole = role == 'provider'
+          ? user?.hasProviderRole == true
+          : user?.hasClientRole == true;
+      if (user != null && hasRole && user.activeRole != role) {
+        await auth.switchOrEnableRole(role);
       }
     } catch (_) {}
     appRouter.go(path);
   }
 
-  static void _openChat(String conversationId) {
-    appRouter.go('/chat');
+  static Future<void> _openChatForAudience(
+    String conversationId,
+    String audience,
+  ) async {
+    final role = audience == 'provider' || audience == 'client'
+        ? audience
+        : null;
+    if (role != null) {
+      await _openAsRole(role, '/chat');
+    } else {
+      appRouter.go('/chat');
+    }
     if (conversationId.isEmpty) return;
     _afterShell(() => appRouter.push('/chat/$conversationId'));
   }

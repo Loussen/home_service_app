@@ -59,6 +59,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         data['type'] == 'chat_connect' ||
         data['type'] == 'new_job' ||
         data['type'] == 'urgent_job' ||
+        data['type'] == 'missed_opportunity' ||
         data['type'] == 'admin') {
       PushRouter.open(data);
       return;
