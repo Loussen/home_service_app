@@ -181,6 +181,34 @@ class BootstrapVoicePrompts {
       };
 }
 
+class WalletIapProduct {
+  const WalletIapProduct({
+    required this.productId,
+    required this.pay,
+    required this.credit,
+  });
+
+  factory WalletIapProduct.fromJson(Map<String, dynamic> json) {
+    return WalletIapProduct(
+      productId: '${json['product_id'] ?? ''}',
+      pay: (json['pay'] as num?)?.toDouble() ?? 0,
+      credit: (json['credit'] as num?)?.toDouble() ??
+          (json['pay'] as num?)?.toDouble() ??
+          0,
+    );
+  }
+
+  final String productId;
+  final double pay;
+  final double credit;
+
+  Map<String, dynamic> toJson() => {
+        'product_id': productId,
+        'pay': pay,
+        'credit': credit,
+      };
+}
+
 class BootstrapConfig {
   const BootstrapConfig({
     this.maxCategoryTags = 3,
@@ -192,6 +220,7 @@ class BootstrapConfig {
     this.bumpHours = 24,
     this.bumpDailyLimit = 2,
     this.walletPackages = const [10, 30, 50],
+    this.walletIapProducts = const [],
     this.requestTtlDefaultHours = 1,
     this.requestTtlOptionsHours = const [1, 3, 6],
     this.onboardingSteps = const [],
@@ -208,6 +237,14 @@ class BootstrapConfig {
             .map((e) => BootstrapStep.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : <BootstrapStep>[];
+    final iapRaw = json['wallet_iap_products'];
+    final iap = iapRaw is List
+        ? iapRaw
+            .whereType<Map>()
+            .map((e) => WalletIapProduct.fromJson(Map<String, dynamic>.from(e)))
+            .where((e) => e.productId.isNotEmpty)
+            .toList()
+        : <WalletIapProduct>[];
 
     return BootstrapConfig(
       maxCategoryTags: (json['max_category_tags'] as num?)?.toInt() ?? 3,
@@ -221,6 +258,7 @@ class BootstrapConfig {
       bumpHours: (json['bump_hours'] as num?)?.toInt() ?? 24,
       bumpDailyLimit: (json['bump_daily_limit'] as num?)?.toInt() ?? 2,
       walletPackages: _numList(json['wallet_packages'], const [10, 30, 50]),
+      walletIapProducts: iap,
       requestTtlDefaultHours:
           (json['request_ttl_default_hours'] as num?)?.toInt() ?? 1,
       requestTtlOptionsHours: _intList(
@@ -250,6 +288,7 @@ class BootstrapConfig {
   final int bumpHours;
   final int bumpDailyLimit;
   final List<double> walletPackages;
+  final List<WalletIapProduct> walletIapProducts;
   final int requestTtlDefaultHours;
   final List<int> requestTtlOptionsHours;
   final List<BootstrapStep> onboardingSteps;
@@ -399,6 +438,8 @@ class BootstrapPayload {
           'bump_hours': config.bumpHours,
           'bump_daily_limit': config.bumpDailyLimit,
           'wallet_packages': config.walletPackages,
+          'wallet_iap_products':
+              config.walletIapProducts.map((e) => e.toJson()).toList(),
           'request_ttl_default_hours': config.requestTtlDefaultHours,
           'request_ttl_options_hours': config.requestTtlOptionsHours,
           'onboarding_steps': config.onboardingSteps

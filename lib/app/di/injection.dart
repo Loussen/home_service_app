@@ -32,6 +32,7 @@ import 'package:home_service_app/features/search_ai/data/search_remote_data_sour
 import 'package:home_service_app/features/search_ai/data/search_repository_impl.dart';
 import 'package:home_service_app/features/search_ai/domain/search_repository.dart';
 import 'package:home_service_app/features/search_ai/presentation/cubit/search_ai_cubit.dart';
+import 'package:home_service_app/features/wallet/data/wallet_iap_service.dart';
 import 'package:home_service_app/features/wallet/data/wallet_remote_data_source.dart';
 import 'package:home_service_app/features/wallet/data/wallet_repository_impl.dart';
 import 'package:home_service_app/features/wallet/domain/wallet_repository.dart';
@@ -97,7 +98,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<WalletRepository>(
       () => WalletRepositoryImpl(getIt()),
     )
-    ..registerFactory(() => WalletCubit(getIt()))
+    ..registerFactory(() => WalletIapService())
+    ..registerFactory(() => WalletCubit(getIt(), getIt()))
     ..registerLazySingleton<VerificationRemoteDataSource>(
       () => VerificationRemoteDataSource(getIt<ApiClient>()),
     )

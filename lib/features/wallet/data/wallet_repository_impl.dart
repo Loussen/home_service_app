@@ -26,4 +26,26 @@ class WalletRepositoryImpl implements WalletRepository {
       return Left(ServerFailure(e.message ?? t('error.generic')));
     }
   }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> confirmIap({
+    required String platform,
+    required String productId,
+    required String verificationData,
+    String? purchaseId,
+  }) async {
+    try {
+      return Right(await _remote.confirmIap(
+        platform: platform,
+        productId: productId,
+        verificationData: verificationData,
+        purchaseId: purchaseId,
+      ));
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? '${(e.response!.data as Map)['message'] ?? e.message}'
+          : (e.message ?? t('error.generic'));
+      return Left(ServerFailure(msg));
+    }
+  }
 }

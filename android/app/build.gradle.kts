@@ -71,6 +71,13 @@ android {
     }
 
     buildTypes {
+        // Same upload keystore as Play so USB debug can query one-time IAP products.
+        // Requires License testing account on the device + products Active in Play Console.
+        debug {
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
         release {
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
