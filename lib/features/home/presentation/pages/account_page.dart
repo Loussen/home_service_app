@@ -421,7 +421,7 @@ class AccountPage extends StatelessWidget {
                             color: AppColors.cream,
                             icon: Icons.assignment_outlined,
                             title: t('account.card.requests'),
-                            onTap: () => context.go('/search'),
+                            onTap: () => context.go('/profiles'),
                           ),
                           _PastelCard(
                             color: AppColors.lavender,

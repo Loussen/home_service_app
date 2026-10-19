@@ -33,12 +33,15 @@ class _RequestDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SearchAiCubit, SearchAiState>(
+      listenWhen: (prev, curr) =>
+          curr.message != null && curr.message != prev.message,
       listener: (context, state) {
-        if (state.message != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message!)),
-          );
-        }
+        final msg = state.message;
+        if (msg == null) return;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(msg)));
+        context.read<SearchAiCubit>().clearMessage();
       },
       builder: (context, state) {
         final cubit = context.read<SearchAiCubit>();

@@ -186,12 +186,18 @@ class _SearchAiViewState extends State<_SearchAiView>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SearchAiCubit, SearchAiState>(
+      listenWhen: (prev, curr) =>
+          (curr.message != null && curr.message != prev.message) ||
+          curr.phase != prev.phase,
       listener: (context, state) {
-        if (state.message != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message!)),
-          );
-          if (state.message!.contains(t('common.balance_remaining'))) {
+        final msg = state.message;
+        if (msg != null) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(content: Text(msg)));
+          // Clear so later emits (categories/location) do not re-show the same toast.
+          context.read<SearchAiCubit>().clearMessage();
+          if (msg.contains(t('common.balance_remaining'))) {
             context.read<AuthCubit>().bootstrap();
           }
         }
@@ -1070,7 +1076,6 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
               mapView: _mapView,
               onToggleView: () => setState(() => _mapView = false),
               onUrgent: canContact ? onUrgent : null,
-              onCancel: canCancel ? confirmCancel : null,
             ),
           ),
           Expanded(
@@ -1081,6 +1086,11 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
               onProviderTap: (id) => _selectProvider(id),
             ),
           ),
+          if (canCancel)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: _StopSearchButton(onPressed: confirmCancel),
+            ),
           if (selected != null)
             SafeArea(
               top: false,
@@ -1102,7 +1112,9 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                       : () => _connect(selected),
                 ),
               ),
-            ),
+            )
+          else if (canCancel)
+            const SafeArea(top: false, child: SizedBox(height: 12)),
         ],
       );
     }
@@ -1176,7 +1188,6 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
                       _selectProvider(matches.first.provider?.id);
                     }),
             onUrgent: canContact ? onUrgent : null,
-            onCancel: canCancel ? confirmCancel : null,
           ),
           const SizedBox(height: 8),
           MatchesMap(
@@ -1184,6 +1195,10 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
             selectedProviderId: _selectedProviderId,
             onProviderTap: (id) => _selectProvider(id, scrollToCard: true),
           ),
+          if (canCancel) ...[
+            const SizedBox(height: 12),
+            _StopSearchButton(onPressed: confirmCancel),
+          ],
           const SizedBox(height: 16),
           ..._searchMetaBanners(context, request),
           const SizedBox(height: 8),
@@ -1243,6 +1258,29 @@ class _RequestResultsBodyState extends State<RequestResultsBody> {
   }
 }
 
+class _StopSearchButton extends StatelessWidget {
+  const _StopSearchButton({required this.onPressed});
+
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: () => onPressed(),
+      icon: const Icon(Icons.stop_circle_outlined, size: 18),
+      label: Text(t('request.cancel_action')),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFFC44536),
+        side: const BorderSide(color: Color(0xFFC44536)),
+        minimumSize: const Size(double.infinity, 48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    );
+  }
+}
+
 class _ResultsHeader extends StatelessWidget {
   const _ResultsHeader({
     required this.request,
@@ -1250,7 +1288,6 @@ class _ResultsHeader extends StatelessWidget {
     required this.mapView,
     this.onUrgent,
     this.onToggleView,
-    this.onCancel,
   });
 
   final ServiceRequestModel request;
@@ -1258,58 +1295,37 @@ class _ResultsHeader extends StatelessWidget {
   final bool mapView;
   final VoidCallback? onUrgent;
   final VoidCallback? onToggleView;
-  final Future<void> Function()? onCancel;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                t('search.matches_count', params: {'count': '$matchCount'}),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            if (onToggleView != null)
-              TextButton.icon(
-                onPressed: onToggleView,
-                icon: Icon(
-                  mapView ? Icons.view_list : Icons.map_outlined,
-                  size: 18,
-                ),
-                label: Text(
-                  mapView ? t('search.view_list') : t('search.view_map'),
-                ),
-              ),
-            if (!request.isUrgent && onUrgent != null)
-              TextButton.icon(
-                onPressed:
-                    (context.watch<AuthCubit>().state.user?.canUrgent ?? true)
-                        ? onUrgent
-                        : null,
-                icon: const Icon(Icons.campaign_outlined, size: 18),
-                label: Text(t('search.urgent_title')),
-              ),
-          ],
+        Expanded(
+          child: Text(
+            t('search.matches_count', params: {'count': '$matchCount'}),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
-        if (onCancel != null) ...[
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => onCancel!(),
-            icon: const Icon(Icons.stop_circle_outlined, size: 18),
-            label: Text(t('request.cancel_action')),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFC44536),
-              side: const BorderSide(color: Color(0xFFC44536)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+        if (onToggleView != null)
+          TextButton.icon(
+            onPressed: onToggleView,
+            icon: Icon(
+              mapView ? Icons.view_list : Icons.map_outlined,
+              size: 18,
+            ),
+            label: Text(
+              mapView ? t('search.view_list') : t('search.view_map'),
             ),
           ),
-        ],
+        if (!request.isUrgent && onUrgent != null)
+          TextButton.icon(
+            onPressed:
+                (context.watch<AuthCubit>().state.user?.canUrgent ?? true)
+                    ? onUrgent
+                    : null,
+            icon: const Icon(Icons.campaign_outlined, size: 18),
+            label: Text(t('search.urgent_title')),
+          ),
       ],
     );
   }

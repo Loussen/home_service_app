@@ -97,9 +97,11 @@ class WalletPage extends StatelessWidget {
                             builder: (context) {
                               final map =
                                   state.transactions[i] as Map<String, dynamic>;
+                              final type = '${map['type'] ?? ''}';
+                              final status = '${map['status'] ?? ''}';
                               return ListTile(
-                                title: Text('${map['type']}'),
-                                subtitle: Text('${map['status']}'),
+                                title: Text(_walletTxLabel(type)),
+                                subtitle: Text(_walletStatusLabel(status)),
                                 trailing: Text(
                                   '${map['amount']} ₼',
                                   style: const TextStyle(
@@ -121,6 +123,18 @@ class WalletPage extends StatelessWidget {
       ),
     );
   }
+}
+
+String _walletTxLabel(String type) {
+  final key = 'wallet.tx.$type';
+  final label = t(key);
+  return label == key ? type : label;
+}
+
+String _walletStatusLabel(String status) {
+  final key = 'wallet.status.$status';
+  final label = t(key);
+  return label == key ? status : label;
 }
 
 class _PackageTile extends StatelessWidget {

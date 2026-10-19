@@ -76,6 +76,11 @@ class SearchAiCubit extends Cubit<SearchAiState> {
 
   void setUrgent(bool value) => emit(state.copyWith(isUrgent: value));
 
+  void clearMessage() {
+    if (state.message == null) return;
+    emit(state.copyWith(clearMessage: true));
+  }
+
   Future<void> _resolveLocation() async {
     try {
       var permission = await Geolocator.checkPermission();
