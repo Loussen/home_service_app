@@ -6,6 +6,13 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- App Store “Languages” + system language matching (Flutter strings are remote). -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>az</string>
+		<string>en</string>
+		<string>ru</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>My Sancho</string>
 	<key>CFBundleExecutable</key>
